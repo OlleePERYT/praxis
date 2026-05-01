@@ -1,5 +1,4 @@
 import { DefaultSession } from "next-auth";
-
 declare module "next-auth" {
   interface Session {
     user: DefaultSession["user"] & {
@@ -8,14 +7,12 @@ declare module "next-auth" {
       practiceSubdomain: string;
     };
   }
-
   interface User {
     id: string;
     practiceId: number;
     practiceSubdomain: string;
   }
 }
-
 declare module "next-auth/jwt" {
   interface JWT {
     userId: number;
