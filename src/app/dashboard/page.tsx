@@ -96,7 +96,8 @@ export default async function DashboardPage() {
   }
 
   const practice = await db.query.practices.findFirst({
-    where: (practices, { eq }) => eq(practices.id, practiceFromHeaders.id),
+    where: (practices, { eq }) =>
+      eq(practices.subdomain, practiceFromHeaders.subdomain),
   });
 
   if (!practice) {

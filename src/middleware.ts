@@ -1,15 +1,5 @@
 import { NextResponse } from "next/server";
-import Database from "better-sqlite3";
 import { auth } from "@/auth";
-
-const databaseUrl = process.env.DATABASE_URL ?? "./data/praxis-kennzahlen.db";
-const sqlite = new Database(databaseUrl, { readonly: true });
-
-type PracticeRow = {
-  id: number;
-  subdomain: string;
-  name: string;
-};
 
 function getSubdomain(hostHeader: string | null): string | null {
   if (!hostHeader) return null;
@@ -45,24 +35,12 @@ export default auth((req) => {
   }
 
   const subdomain = getSubdomain(req.headers.get("host"));
-  if (!subdomain) {
-    return new NextResponse("Not Found", { status: 404 });
-  }
-
-  const practice = sqlite
-    .prepare(
-      "SELECT id, subdomain, name FROM practices WHERE subdomain = ? LIMIT 1",
-    )
-    .get(subdomain) as PracticeRow | undefined;
-
-  if (!practice) {
-    return new NextResponse("Not Found", { status: 404 });
-  }
-
   const requestHeaders = new Headers(req.headers);
-  requestHeaders.set("x-practice-subdomain", practice.subdomain);
-  requestHeaders.set("x-practice-id", String(practice.id));
-  requestHeaders.set("x-practice-name", practice.name);
+  if (subdomain) {
+    requestHeaders.set("x-practice-subdomain", subdomain);
+  } else {
+    requestHeaders.delete("x-practice-subdomain");
+  }
 
   return NextResponse.next({
     request: {
