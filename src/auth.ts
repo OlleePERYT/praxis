@@ -2,16 +2,12 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
+import { authConfig } from "@/auth.config";
 import { db } from "@/db";
 import { practices, users } from "@/db/schema";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: {
-    strategy: "jwt",
-  },
-  pages: {
-    signIn: "/login",
-  },
+  ...authConfig,
   providers: [
     Credentials({
       name: "Credentials",
@@ -57,24 +53,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.userId = Number(user.id);
-        token.practiceId = user.practiceId;
-        token.practiceSubdomain = user.practiceSubdomain;
-      }
-
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = String(token.userId);
-        session.user.practiceId = token.practiceId as number;
-        session.user.practiceSubdomain = token.practiceSubdomain as string;
-      }
-
-      return session;
-    },
-  },
 });
