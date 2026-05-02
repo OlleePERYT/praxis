@@ -10,14 +10,15 @@ const defaultRevenue: RevenueConfigDirect = {
   revPerHour: 75,
 };
 
-/** Fünf feste Slots – generische Defaults (Onboarding überschreibt via DB-JSON). */
-export const DEFAULT_EMPLOYEES: Employee[] = [
-  { name: "Therapeut:in 1", hours: 20, rate: 28, vacation: 30, sick: 10 },
-  { name: "Therapeut:in 2", hours: 0, rate: 25, vacation: 30, sick: 10 },
-  { name: "Therapeut:in 3", hours: 0, rate: 25, vacation: 30, sick: 10 },
-  { name: "Therapeut:in 4", hours: 0, rate: 25, vacation: 30, sick: 10 },
-  { name: "Therapeut:in 5", hours: 0, rate: 25, vacation: 30, sick: 10 },
-];
+export function defaultEmployee(index: number): Employee {
+  return {
+    name: `Therapeut:in ${index + 1}`,
+    hours: 20,
+    rate: 25,
+    vacation: 30,
+    sick: 10,
+  };
+}
 
 function asNumber(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -28,19 +29,26 @@ export function normalizePraxisConfig(rawConfig: unknown): PraxisConfig {
   const source = raw as Record<string, unknown>;
 
   const rawEmployees = Array.isArray(source.employees) ? source.employees : [];
-  const employees: Employee[] = DEFAULT_EMPLOYEES.map((defaults, index) => {
-    const entry = (rawEmployees[index] ?? {}) as Record<string, unknown>;
-    return {
-      name:
-        typeof entry.name === "string" && entry.name.trim().length > 0
-          ? entry.name
-          : defaults.name,
-      hours: asNumber(entry.hours, defaults.hours),
-      rate: asNumber(entry.rate, defaults.rate),
-      vacation: asNumber(entry.vacation, defaults.vacation),
-      sick: asNumber(entry.sick, defaults.sick),
-    };
-  });
+  let employees: Employee[];
+
+  if (rawEmployees.length === 0) {
+    employees = [defaultEmployee(0)];
+  } else {
+    employees = rawEmployees.map((entry, index) => {
+      const e = (entry ?? {}) as Record<string, unknown>;
+      const fallback = defaultEmployee(index);
+      return {
+        name:
+          typeof e.name === "string" && e.name.trim().length > 0
+            ? e.name
+            : fallback.name,
+        hours: asNumber(e.hours, fallback.hours),
+        rate: asNumber(e.rate, fallback.rate),
+        vacation: asNumber(e.vacation, fallback.vacation),
+        sick: asNumber(e.sick, fallback.sick),
+      };
+    });
+  }
 
   const revenueNode =
     typeof source.revenue === "object" && source.revenue !== null

@@ -84,12 +84,16 @@ export function ScenarioPanel({ currentConfig, onLoad }: ScenarioPanelProps) {
     }
 
     setMessage(null);
+    const cleanedConfig: PraxisConfig = {
+      ...currentConfig,
+      employees: currentConfig.employees.filter((e) => e.hours > 0),
+    };
     const response = await fetch("/api/scenarios", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: trimmedName,
-        data: currentConfig,
+        data: cleanedConfig,
       }),
     });
 

@@ -11,9 +11,11 @@ import { RevenuePanel } from "./RevenuePanel";
 import { ScenarioPanel } from "./ScenarioPanel";
 import { StepSlider } from "./StepSlider";
 import { C } from "@/lib/colors";
-import { normalizePraxisConfig } from "@/lib/praxis-config";
+import { defaultEmployee, normalizePraxisConfig } from "@/lib/praxis-config";
 import type { Employee, PraxisConfig, RevenueConfigDirect, RevenueConfigMix } from "@/lib/engine";
 import { calculatePraxis } from "@/lib/engine";
+
+const SOFT_LIMIT = 25;
 
 type SimulatorClientProps = {
   initialConfig: PraxisConfig;
@@ -21,9 +23,6 @@ type SimulatorClientProps = {
 
 export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
   const [config, setConfig] = useState<PraxisConfig>(initialConfig);
-  const [expanded, setExpanded] = useState(() =>
-    initialConfig.employees.map((e) => e.hours > 0),
-  );
 
   const result = useMemo(() => calculatePraxis(config), [config]);
 
@@ -43,15 +42,23 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
       employees[index] = updated;
       return { ...prev, employees };
     });
-    setExpanded((prev) => {
-      const next = [...prev];
-      if (updated.hours > 0) {
-        next[index] = true;
-      } else {
-        next[index] = false;
-      }
-      return next;
+  };
+
+  const addEmployee = () => {
+    setConfig((prev) => {
+      if (prev.employees.length >= SOFT_LIMIT) return prev;
+      return {
+        ...prev,
+        employees: [...prev.employees, defaultEmployee(prev.employees.length)],
+      };
     });
+  };
+
+  const removeEmployee = (index: number) => {
+    setConfig((prev) => ({
+      ...prev,
+      employees: prev.employees.filter((_, i) => i !== index),
+    }));
   };
 
   const updateRevenue = (revenue: RevenueConfigDirect | RevenueConfigMix) => {
@@ -59,9 +66,7 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
   };
 
   const loadScenario = (raw: unknown) => {
-    const next = normalizePraxisConfig(raw);
-    setConfig(next);
-    setExpanded(next.employees.map((e) => e.hours > 0));
+    setConfig(normalizePraxisConfig(raw));
   };
 
   const euro0 = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
@@ -76,22 +81,29 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
             <h2 className="text-xl font-semibold" style={{ color: C.primary }}>
               Mitarbeiter
             </h2>
-            {config.employees.map((employee, index) => (
-              <EmployeeCard
-                key={`slot-${index}`}
-                employee={employee}
-                index={index}
-                isExpanded={expanded[index] ?? false}
-                onToggleExpand={() =>
-                  setExpanded((prev) => {
-                    const next = [...prev];
-                    next[index] = !next[index];
-                    return next;
-                  })
-                }
-                onChange={updateEmployee}
-              />
-            ))}
+            {config.employees
+              .map((employee, index) => ({ employee, index }))
+              .filter(({ employee }) => employee.hours > 0)
+              .map(({ employee, index }) => (
+                <EmployeeCard
+                  key={`emp-${index}`}
+                  employee={employee}
+                  index={index}
+                  onChange={updateEmployee}
+                  onRemove={removeEmployee}
+                />
+              ))}
+            <button
+              type="button"
+              onClick={addEmployee}
+              disabled={config.employees.length >= SOFT_LIMIT}
+              className="w-full rounded-xl border-2 border-dashed py-4 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50"
+              style={{ borderColor: C.lightBg2, color: C.primary }}
+            >
+              {config.employees.length >= SOFT_LIMIT
+                ? `Maximum ${SOFT_LIMIT} Therapeut:innen erreicht`
+                : "+ Therapeut:in hinzufügen"}
+            </button>
             <p
               className="rounded-lg border px-3 py-2 text-sm font-medium"
               style={{
