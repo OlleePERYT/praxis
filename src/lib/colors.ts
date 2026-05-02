@@ -1,5 +1,5 @@
-export const DEFAULT_PRIMARY = "#2D5353";
-export const DEFAULT_ACCENT = "#4A7A7A";
+export const DEFAULT_PRIMARY = "#2D6A4F";
+export const DEFAULT_ACCENT = "#52B788";
 
 export const C = {
   primary: "var(--c-primary)",

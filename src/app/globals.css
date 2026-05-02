@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@config "../../tailwind.config.ts";
 
 :root {
   --background: #ffffff;
@@ -8,8 +9,17 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-brand-primary: #2d6a4f;
+  --color-brand-accent: #52b788;
+  --color-brand-olive: #7a8b4d;
+  --color-brand-ink: #1e2328;
+  --color-brand-bg: #f6f4ef;
+  --color-brand-surface: #edeae3;
+  --color-brand-text: #3d4a40;
+  --color-brand-muted: #6b7b6e;
+  --font-sans: "Manrope", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,5 +32,5 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
