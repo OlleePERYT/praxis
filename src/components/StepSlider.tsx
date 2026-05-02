@@ -39,13 +39,13 @@ export function StepSlider({
   };
 
   return (
-    <fieldset
+    <div
       className="rounded-lg border p-3"
       style={{ borderColor: C.lightBg2, backgroundColor: C.white }}
     >
-      <legend className="px-1 text-sm font-medium" style={{ color: C.gray }}>
+      <label className="mb-2 block text-sm font-medium" style={{ color: C.gray }}>
         {label}
-      </legend>
+      </label>
 
       <div className="flex items-center gap-2">
         <button
@@ -90,6 +90,6 @@ export function StepSlider({
           {hint}
         </p>
       ) : null}
-    </fieldset>
+    </div>
   );
 }
