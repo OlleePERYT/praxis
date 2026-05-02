@@ -17,6 +17,8 @@ export function ProfitLoss({ result, employees }: ProfitLossProps) {
     .map((e, i) => ({ e, i }))
     .filter(({ e }) => e.hours > 0);
 
+  const totalEff = result.employeeDetails.reduce((s, e) => s + e.effHours, 0);
+
   return (
     <section
       className="space-y-4 rounded-xl border p-4 shadow-sm"
@@ -44,11 +46,15 @@ export function ProfitLoss({ result, employees }: ProfitLossProps) {
         {active.map(({ e, i }) => {
           const d = result.employeeDetails[i];
           if (!d) return null;
+          const maRevShare =
+            totalEff > 0 ? result.revenueTherapy * (d.effHours / totalEff) : 0;
+          const maDB = maRevShare - d.cost;
           return (
             <Row
               key={i}
               label={`Personal ${e.name} (inkl. AG-Anteil)`}
               value={d.cost}
+              db={maDB}
             />
           );
         })}
@@ -93,20 +99,39 @@ function Row({
   label,
   value,
   bold,
+  db,
 }: {
   label: string;
   value: number;
   bold?: boolean;
+  db?: number;
 }) {
+  const valueSpan = (
+    <span
+      className={`tabular-nums ${bold ? "font-semibold" : ""}`}
+      style={{ color: C.primary }}
+    >
+      {euro.format(value)} €
+    </span>
+  );
+
   return (
     <div className="flex flex-wrap justify-between gap-2">
       <span style={{ color: C.gray }}>{label}</span>
-      <span
-        className={`tabular-nums ${bold ? "font-semibold" : ""}`}
-        style={{ color: C.primary }}
-      >
-        {euro.format(value)} €
-      </span>
+      {db !== undefined ? (
+        <span className="flex gap-4">
+          {valueSpan}
+          <span
+            className="tabular-nums text-sm font-medium"
+            style={{ color: db >= 0 ? C.green : C.red }}
+          >
+            DB: {db >= 0 ? "+" : "−"}
+            {euro.format(Math.abs(db))} €
+          </span>
+        </span>
+      ) : (
+        valueSpan
+      )}
     </div>
   );
 }
