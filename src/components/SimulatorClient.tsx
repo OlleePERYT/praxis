@@ -142,6 +142,30 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
                 unit="€"
                 onChange={(untermiete) => setConfig((prev) => ({ ...prev, untermiete }))}
               />
+              <StepSlider
+                label="GF-Gehalt pro Monat (nur GmbH)"
+                value={config.gfGehaltMonat}
+                min={0}
+                max={15000}
+                step={250}
+                unit="€"
+                hint="0 € (kein GF-Gehalt) | 4.500 € | 8.000 €"
+                onChange={(gfGehaltMonat) =>
+                  setConfig((prev) => ({ ...prev, gfGehaltMonat }))
+                }
+              />
+              <StepSlider
+                label="Inhaberentnahme pro Monat (Einzelunt./GbR)"
+                value={config.inhaberEntnahmeMonat}
+                min={0}
+                max={15000}
+                step={250}
+                unit="€"
+                hint="0 € (keine Entnahme) | 3.000 € | 6.000 €"
+                onChange={(inhaberEntnahmeMonat) =>
+                  setConfig((prev) => ({ ...prev, inhaberEntnahmeMonat }))
+                }
+              />
             </div>
           </div>
         </div>

@@ -31,6 +31,14 @@ export function KpiBar({ result }: KpiBarProps) {
   const pkPct = result.personalCostRatio * 100;
   const pkColor = pkPct > 45 ? C.red : C.primary;
 
+  const hasEntnahme = result.inhaberEntnahmeJahr > 0;
+  const nachEntnahmeColor =
+    result.ueberschussNachEntnahme > 0
+      ? C.green
+      : result.ueberschussNachEntnahme < 0
+        ? C.red
+        : C.primary;
+
   return (
     <div
       className="sticky top-0 z-50 border-b backdrop-blur"
@@ -52,6 +60,23 @@ export function KpiBar({ result }: KpiBarProps) {
             · {formatEuro(perMonth)} / Monat
           </span>
         </div>
+
+        {hasEntnahme ? (
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="text-sm font-medium" style={{ color: C.gray }}>
+              Nach Entnahme
+            </span>
+            <span
+              className="text-lg font-semibold tabular-nums sm:text-xl"
+              style={{ color: nachEntnahmeColor }}
+            >
+              {formatEuro(result.ueberschussNachEntnahme)} / Jahr
+            </span>
+            <span className="text-xs tabular-nums" style={{ color: C.lightGray }}>
+              · {formatEuro(result.ueberschussNachEntnahme / 12)} / Monat
+            </span>
+          </div>
+        ) : null}
 
         {/* Sekundärwerte */}
         <div

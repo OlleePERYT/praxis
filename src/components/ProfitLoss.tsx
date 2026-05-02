@@ -58,6 +58,9 @@ export function ProfitLoss({ result, employees }: ProfitLossProps) {
             />
           );
         })}
+        {result.gfGehaltJahr > 0 ? (
+          <Row label="Geschäftsführer-Gehalt" value={result.gfGehaltJahr} />
+        ) : null}
         <Row label="Σ Personalkosten" value={result.personalCost} bold />
       </div>
 
@@ -91,6 +94,28 @@ export function ProfitLoss({ result, employees }: ProfitLossProps) {
           </p>
         )}
       </div>
+
+      {result.inhaberEntnahmeJahr > 0 ? (
+        <div className="border-t pt-3" style={{ borderColor: C.lightBg2 }}>
+          <Row
+            label="Inhaberentnahme (informativ, kein GuV-Aufwand)"
+            value={-result.inhaberEntnahmeJahr}
+          />
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+            <span className="text-base font-semibold" style={{ color: C.primary }}>
+              Verbleibend nach Entnahme
+            </span>
+            <span
+              className="text-base font-semibold tabular-nums"
+              style={{
+                color: result.ueberschussNachEntnahme >= 0 ? C.green : C.red,
+              }}
+            >
+              {euro.format(result.ueberschussNachEntnahme)} €
+            </span>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
