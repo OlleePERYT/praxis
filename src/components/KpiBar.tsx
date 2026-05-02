@@ -5,6 +5,7 @@ import type { PraxisResult } from "@/lib/engine";
 
 type KpiBarProps = {
   result: PraxisResult;
+  baseline: { result: PraxisResult } | null;
 };
 
 const currencyFormatter = new Intl.NumberFormat("de-DE", {
@@ -20,7 +21,7 @@ function formatEuro(value: number): string {
   return `${currencyFormatter.format(value)} €`;
 }
 
-export function KpiBar({ result }: KpiBarProps) {
+export function KpiBar({ result, baseline }: KpiBarProps) {
   const ueberschussColor =
     result.ueberschuss > 0
       ? C.green
@@ -30,6 +31,19 @@ export function KpiBar({ result }: KpiBarProps) {
   const perMonth = result.ueberschuss / 12;
   const pkPct = result.personalCostRatio * 100;
   const pkColor = pkPct > 45 ? C.red : C.primary;
+
+  const delta = baseline
+    ? result.ueberschuss - baseline.result.ueberschuss
+    : null;
+  const deltaColor =
+    delta === null
+      ? C.lightGray
+      : delta > 0
+        ? C.green
+        : delta < 0
+          ? C.red
+          : C.lightGray;
+  const deltaSign = delta !== null && delta > 0 ? "+" : "";
 
   const hasEntnahme = result.inhaberEntnahmeJahr > 0;
   const nachEntnahmeColor =
@@ -60,6 +74,25 @@ export function KpiBar({ result }: KpiBarProps) {
             · {formatEuro(perMonth)} / Monat
           </span>
         </div>
+
+        {baseline ? (
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
+            <span style={{ color: C.lightGray }}>
+              gegenüber Baseline {formatEuro(baseline.result.ueberschuss)}
+            </span>
+            <span
+              className="font-semibold tabular-nums"
+              style={{ color: deltaColor }}
+            >
+              {deltaSign}
+              {formatEuro(delta ?? 0)} / Jahr
+            </span>
+            <span className="tabular-nums" style={{ color: C.lightGray }}>
+              · {deltaSign}
+              {formatEuro((delta ?? 0) / 12)} / Monat
+            </span>
+          </div>
+        ) : null}
 
         {hasEntnahme ? (
           <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">

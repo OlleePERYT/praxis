@@ -13,10 +13,21 @@ import { ScenarioPanel } from "./ScenarioPanel";
 import { StepSlider } from "./StepSlider";
 import { C } from "@/lib/colors";
 import { defaultEmployee, normalizePraxisConfig } from "@/lib/praxis-config";
-import type { Employee, PraxisConfig, RevenueConfigDirect, RevenueConfigMix } from "@/lib/engine";
+import type {
+  Employee,
+  PraxisConfig,
+  PraxisResult,
+  RevenueConfigDirect,
+  RevenueConfigMix,
+} from "@/lib/engine";
 import { calculatePraxis } from "@/lib/engine";
 
 const SOFT_LIMIT = 25;
+
+type Baseline = {
+  config: PraxisConfig;
+  result: PraxisResult;
+};
 
 type SimulatorClientProps = {
   initialConfig: PraxisConfig;
@@ -24,8 +35,22 @@ type SimulatorClientProps = {
 
 export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
   const [config, setConfig] = useState<PraxisConfig>(initialConfig);
+  const [baseline, setBaseline] = useState<Baseline | null>(null);
 
   const result = useMemo(() => calculatePraxis(config), [config]);
+
+  const saveBaseline = () => {
+    setBaseline({ config, result });
+  };
+
+  const resetToBaseline = () => {
+    if (!baseline) return;
+    setConfig(baseline.config);
+  };
+
+  const clearBaseline = () => {
+    setBaseline(null);
+  };
 
   const sumWeeklyHours = useMemo(
     () => config.employees.reduce((s, e) => s + e.hours, 0),
@@ -74,9 +99,52 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: C.pageBg }}>
-      <KpiBar result={result} />
+      <KpiBar result={result} baseline={baseline} />
 
       <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6">
+        <div
+          className="flex flex-wrap items-center gap-2 rounded-lg border p-3"
+          style={{ borderColor: C.lightBg2, backgroundColor: C.white }}
+        >
+          {baseline ? (
+            <>
+              <button
+                type="button"
+                onClick={resetToBaseline}
+                className="rounded-md px-3 py-1.5 text-sm font-medium"
+                style={{ backgroundColor: C.primary, color: C.white }}
+              >
+                ↺ Auf Baseline zurücksetzen
+              </button>
+              <button
+                type="button"
+                onClick={saveBaseline}
+                className="rounded-md border px-3 py-1.5 text-sm font-medium"
+                style={{ borderColor: C.lightBg2, color: C.primary }}
+              >
+                Baseline aktualisieren
+              </button>
+              <button
+                type="button"
+                onClick={clearBaseline}
+                className="ml-auto rounded-md border px-3 py-1.5 text-xs"
+                style={{ borderColor: C.lightBg2, color: C.lightGray }}
+              >
+                Baseline löschen
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={saveBaseline}
+              className="rounded-md px-3 py-1.5 text-sm font-medium"
+              style={{ backgroundColor: C.primary, color: C.white }}
+            >
+              Aktuellen Stand als Baseline merken
+            </button>
+          )}
+        </div>
+
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-4">
             <h2 className="text-xl font-semibold" style={{ color: C.primary }}>
