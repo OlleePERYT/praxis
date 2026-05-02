@@ -15,6 +15,11 @@ export interface Employee {
   trainingCost: number;
 }
 
+/** Jahres-Personalkosten (Brutto-Stunden × 52 × AG); identisch zur MA-Zeile in calculatePraxis. */
+export function getEmployeePersonnelCostYear(employee: Employee): number {
+  return employee.rate * employee.hours * WEEKS * AG;
+}
+
 export interface SachkostenConfigDirect {
   mode: "direct";
   value: number;

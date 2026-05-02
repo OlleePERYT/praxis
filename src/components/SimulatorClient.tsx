@@ -35,6 +35,9 @@ type SimulatorClientProps = {
 
 export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
   const [config, setConfig] = useState<PraxisConfig>(initialConfig);
+  const [expanded, setExpanded] = useState<boolean[]>(() =>
+    initialConfig.employees.map(() => false),
+  );
   const [baseline, setBaseline] = useState<Baseline | null>(null);
 
   const [savingScenario, setSavingScenario] = useState(false);
@@ -152,6 +155,45 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
   const resetToBaseline = () => {
     if (!baseline) return;
     setConfig(baseline.config);
+    setExpanded(baseline.config.employees.map(() => false));
+  };
+
+  const visibleIndices = useMemo(
+    () =>
+      config.employees
+        .map((e, i) => ({ e, i }))
+        .filter(({ e }) => e.hours > 0)
+        .map(({ i }) => i),
+    [config.employees],
+  );
+
+  const anyExpanded = useMemo(
+    () => visibleIndices.some((i) => expanded[i] ?? false),
+    [visibleIndices, expanded],
+  );
+
+  const toggleAll = () => {
+    setExpanded((prev) => {
+      const next = [...prev];
+      while (next.length < config.employees.length) {
+        next.push(false);
+      }
+      visibleIndices.forEach((i) => {
+        next[i] = !anyExpanded;
+      });
+      return next;
+    });
+  };
+
+  const toggleExpanded = (index: number) => {
+    setExpanded((prev) => {
+      const next = [...prev];
+      while (next.length <= index) {
+        next.push(false);
+      }
+      next[index] = !next[index];
+      return next;
+    });
   };
 
   const sumWeeklyHours = useMemo(
@@ -173,13 +215,18 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
   };
 
   const addEmployee = () => {
+    let grew = false;
     setConfig((prev) => {
       if (prev.employees.length >= SOFT_LIMIT) return prev;
+      grew = true;
       return {
         ...prev,
         employees: [...prev.employees, defaultEmployee(prev.employees.length)],
       };
     });
+    if (grew) {
+      setExpanded((prev) => [...prev, true]);
+    }
   };
 
   const removeEmployee = (index: number) => {
@@ -187,6 +234,7 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
       ...prev,
       employees: prev.employees.filter((_, i) => i !== index),
     }));
+    setExpanded((prev) => prev.filter((_, i) => i !== index));
   };
 
   const updateRevenue = (revenue: RevenueConfigDirect | RevenueConfigMix) => {
@@ -194,7 +242,9 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
   };
 
   const loadScenario = (raw: unknown) => {
-    setConfig(normalizePraxisConfig(raw));
+    const normalized = normalizePraxisConfig(raw);
+    setConfig(normalized);
+    setExpanded(normalized.employees.map(() => false));
   };
 
   const euro0 = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
@@ -304,9 +354,21 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
 
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold" style={{ color: C.primary }}>
-              Mitarbeiter
-            </h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-xl font-semibold" style={{ color: C.primary }}>
+                Mitarbeiter
+              </h2>
+              {visibleIndices.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={toggleAll}
+                  className="rounded-md border px-3 py-1.5 text-xs font-medium"
+                  style={{ borderColor: C.lightBg2, color: C.primary }}
+                >
+                  {anyExpanded ? "Alle einklappen" : "Alle aufklappen"}
+                </button>
+              ) : null}
+            </div>
             {config.employees
               .map((employee, index) => ({ employee, index }))
               .filter(({ employee }) => employee.hours > 0)
@@ -315,6 +377,8 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
                   key={`emp-${index}`}
                   employee={employee}
                   index={index}
+                  isExpanded={expanded[index] ?? false}
+                  onToggleExpand={() => toggleExpanded(index)}
                   onChange={updateEmployee}
                   onRemove={removeEmployee}
                 />
