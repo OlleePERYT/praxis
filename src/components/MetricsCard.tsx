@@ -18,50 +18,90 @@ type MetricsCardProps = {
   sumWeeklyHours: number;
 };
 
+type TileProps = {
+  label: string;
+  value: string;
+  unit?: string;
+  valueColor?: string;
+};
+
+function Tile({ label, value, unit, valueColor }: TileProps) {
+  return (
+    <div
+      className="rounded-lg border p-3"
+      style={{ borderColor: C.lightBg2, backgroundColor: C.lightBg }}
+    >
+      <p className="text-xs" style={{ color: C.gray }}>
+        {label}
+      </p>
+      <p className="mt-1 flex items-baseline gap-1">
+        <span
+          className="text-xl font-semibold tabular-nums sm:text-2xl"
+          style={{ color: valueColor ?? C.primary }}
+        >
+          {value}
+        </span>
+        {unit ? (
+          <span className="text-sm" style={{ color: C.gray }}>
+            {unit}
+          </span>
+        ) : null}
+      </p>
+    </div>
+  );
+}
+
 export function MetricsCard({ result, sumWeeklyHours }: MetricsCardProps) {
   const totalEff = result.employeeDetails.reduce((s, e) => s + e.effHours, 0);
-  const revPerHour =
-    totalEff > 0 ? result.revenueTherapy / totalEff : 0;
+  const revPerHour = totalEff > 0 ? result.revenueTherapy / totalEff : 0;
   const pkQuote = result.personalCostRatio * 100;
   const roomQuote =
     result.revenue === 0 ? 0 : (result.mieteJahr / result.revenue) * 100;
   const surplusQuote =
     result.revenue === 0 ? 0 : (result.ueberschuss / result.revenue) * 100;
 
-  const row = (label: string, value: string, valueColor?: string) => (
-    <div className="flex justify-between gap-2 border-b py-2 text-sm last:border-b-0" style={{ borderColor: C.lightBg2 }}>
-      <span style={{ color: C.gray }}>{label}</span>
-      <span className="font-medium tabular-nums" style={{ color: valueColor ?? C.primary }}>
-        {value}
-      </span>
-    </div>
-  );
-
   return (
     <section
-      className="space-y-2 rounded-xl border p-4 shadow-sm"
+      className="rounded-xl border p-4 shadow-sm"
       style={{ backgroundColor: C.white, borderColor: C.lightBg2 }}
     >
-      <h2 className="mb-2 text-xl font-semibold" style={{ color: C.primary }}>
+      <h2 className="mb-4 text-xl font-semibold" style={{ color: C.primary }}>
         Kennzahlen
       </h2>
-      {row("Therapeutenstunden / Woche", `${pct1.format(sumWeeklyHours)} Std.`)}
-      {row("Effektive Stunden / Jahr", `${euro0.format(totalEff)} Std.`)}
-      {row(
-        "Erlös / Anwesenheitsstunde",
-        `${pct2.format(revPerHour)} €/h`,
-      )}
-      {row(
-        "Personalkostenquote",
-        `${pct1.format(pkQuote)} %`,
-        pkQuote > 45 ? C.red : C.primary,
-      )}
-      {row("Raumkostenquote (nur Miete)", `${pct1.format(roomQuote)} %`)}
-      {row(
-        "Überschussquote",
-        `${pct1.format(surplusQuote)} %`,
-        surplusQuote >= 0 ? C.green : C.red,
-      )}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        <Tile
+          label="Therapeut:innen-Stunden / Woche"
+          value={pct1.format(sumWeeklyHours)}
+          unit="Std."
+        />
+        <Tile
+          label="Effektive Stunden / Jahr"
+          value={euro0.format(totalEff)}
+          unit="Std."
+        />
+        <Tile
+          label="Erlös / Anwesenheitsstunde"
+          value={pct2.format(revPerHour)}
+          unit="€/h"
+        />
+        <Tile
+          label="Personalkostenquote"
+          value={pct1.format(pkQuote)}
+          unit="%"
+          valueColor={pkQuote > 45 ? C.red : C.primary}
+        />
+        <Tile
+          label="Raumkostenquote (nur Miete)"
+          value={pct1.format(roomQuote)}
+          unit="%"
+        />
+        <Tile
+          label="Überschussquote"
+          value={pct1.format(surplusQuote)}
+          unit="%"
+          valueColor={surplusQuote >= 0 ? C.green : C.red}
+        />
+      </div>
     </section>
   );
 }
