@@ -151,10 +151,9 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
 
         <ProfitLoss result={result} employees={config.employees} />
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <MetricsCard result={result} sumWeeklyHours={sumWeeklyHours} />
-          <PraxisCharts result={result} />
-        </div>
+        <MetricsCard result={result} sumWeeklyHours={sumWeeklyHours} />
+
+        <PraxisCharts result={result} />
 
         {config.refRevenue > 0 ? (
           <ComparisonTable
