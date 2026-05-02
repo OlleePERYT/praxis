@@ -30,8 +30,29 @@ const middlewareImpl = (req: NextAuthRequest) => {
     pathname.startsWith("/favicon.ico") ||
     pathname.startsWith("/public");
 
+  const isMarketingPublic =
+    pathname === "/" ||
+    pathname.startsWith("/impressum") ||
+    pathname.startsWith("/datenschutz");
+  const isContactApi = pathname.startsWith("/api/contact");
+
   if (isAuthApi || isLoginPage || isPublicAsset) {
     return NextResponse.next();
+  }
+
+  if (isMarketingPublic || isContactApi) {
+    const subdomain = getSubdomain(req.headers.get("host"));
+    const requestHeaders = new Headers(req.headers);
+    if (subdomain) {
+      requestHeaders.set("x-practice-subdomain", subdomain);
+    } else {
+      requestHeaders.delete("x-practice-subdomain");
+    }
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
   if (!req.auth?.user) {
