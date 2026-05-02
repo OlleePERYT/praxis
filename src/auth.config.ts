@@ -5,7 +5,8 @@ import Credentials from "next-auth/providers/credentials";
  * Edge-kompatible NextAuth-Basis (kein @/db / kein better-sqlite3).
  * Wird von Middleware genutzt. Echte authorize-Logik liegt in src/auth.ts (Node).
  */
-export const authConfig = {
+export const authConfig: NextAuthConfig = {
+  trustHost: true,
   session: {
     strategy: "jwt",
   },
@@ -43,4 +44,4 @@ export const authConfig = {
       return session;
     },
   },
-} satisfies NextAuthConfig;
+};
