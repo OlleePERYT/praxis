@@ -1,3 +1,5 @@
+import type { BrandingConfig } from "@/lib/branding";
+
 const AG = 1.21;
 const WEEKS = 52;
 /** Jahresfixkosten ohne Miete (Default Direct-Modus); Wert unverändert lassen. */
@@ -60,6 +62,8 @@ export interface RevenueConfigMix {
 
 export interface PraxisConfig {
   employees: Employee[];
+  /** Tenant-Branding (JSON config); keine Auswirkung auf calculatePraxis. */
+  branding?: BrandingConfig;
   revenue: RevenueConfigDirect | RevenueConfigMix;
   mieteMonat: number;
   untermiete: number;

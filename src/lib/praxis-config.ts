@@ -1,3 +1,4 @@
+import type { BrandingConfig } from "@/lib/branding";
 import {
   SACH_OHNE_MIETE,
   type Employee,
@@ -167,8 +168,21 @@ export function normalizePraxisConfig(rawConfig: unknown): PraxisConfig {
     };
   }
 
+  const branding: BrandingConfig = {};
+  const rawBranding = source.branding;
+  if (typeof rawBranding === "object" && rawBranding !== null) {
+    const b = rawBranding as Record<string, unknown>;
+    if (typeof b.primaryColor === "string" && /^#[0-9a-f]{6}$/i.test(b.primaryColor)) {
+      branding.primaryColor = b.primaryColor;
+    }
+    if (typeof b.accentColor === "string" && /^#[0-9a-f]{6}$/i.test(b.accentColor)) {
+      branding.accentColor = b.accentColor;
+    }
+  }
+
   return {
     employees,
+    branding,
     revenue,
     mieteMonat: asNumber(source.mieteMonat, 1200),
     untermiete: asNumber(source.untermiete, 0),

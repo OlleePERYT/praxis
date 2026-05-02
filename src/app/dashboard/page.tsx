@@ -1,9 +1,13 @@
+import type { CSSProperties } from "react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { PracticeFooter } from "@/components/PracticeFooter";
+import { PracticeHeader } from "@/components/PracticeHeader";
+import { SimulatorClient } from "@/components/SimulatorClient";
 import { db } from "@/db";
+import { resolveBranding } from "@/lib/branding";
 import { normalizePraxisConfig } from "@/lib/praxis-config";
 import { getPracticeFromHeaders } from "@/lib/tenant";
-import { SimulatorClient } from "@/components/SimulatorClient";
 
 export default async function DashboardPage() {
   const requestHeaders = await headers();
@@ -30,6 +34,20 @@ export default async function DashboardPage() {
   }
 
   const initialConfig = normalizePraxisConfig(parsedConfig);
+  const { primary, accent } = resolveBranding(initialConfig.branding);
 
-  return <SimulatorClient initialConfig={initialConfig} />;
+  const tenantCssVars = {
+    "--c-primary": primary,
+    "--c-accent": accent,
+  } as CSSProperties;
+
+  return (
+    <div className="flex min-h-screen flex-col" style={tenantCssVars}>
+      <PracticeHeader practiceName={practice.name} />
+      <div className="flex min-h-0 flex-1 flex-col">
+        <SimulatorClient initialConfig={initialConfig} />
+      </div>
+      <PracticeFooter />
+    </div>
+  );
 }

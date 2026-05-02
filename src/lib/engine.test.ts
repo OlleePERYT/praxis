@@ -1,3 +1,5 @@
+import { resolveBranding } from "./branding";
+import { DEFAULT_ACCENT, DEFAULT_PRIMARY } from "./colors";
 import {
   calculatePraxis,
   getEffectiveRevPerHour,
@@ -605,6 +607,10 @@ const refDefaults = {
     "Test 13e: default direct SACH_OHNE_MIETE.",
   );
   console.assert(nEmpty.handelswareJahr === 0, "Test 13f: handelswareJahr default 0.");
+  console.assert(
+    Object.keys(nEmpty.branding ?? {}).length === 0,
+    "Test 13g: branding default leer.",
+  );
 }
 
 // Test 14: Mix mit bgPct=0 → gleiches effektives €/h wie ohne BG-Term (Regression).
@@ -722,6 +728,85 @@ const refDefaults = {
     r1.personalCostRatio < r0.personalCostRatio,
     "Test 16e: PK-Quote sinkt (hoeherer Nenner).",
   );
+}
+
+// Test 17: branding beeinflusst calculatePraxis nicht.
+{
+  const emp = {
+    name: "Therapeutin 1",
+    hours: 10,
+    rate: 20,
+    vacation: 0,
+    sick: 0,
+    training: 0,
+    trainingCost: 0,
+  };
+  const base: PraxisConfig = {
+    employees: [emp],
+    revenue: { mode: "direct", revPerHour: 50 },
+    mieteMonat: 0,
+    untermiete: 0,
+    sachkosten: { mode: "direct", value: 0 },
+    ...refDefaults,
+  };
+  const withBrand: PraxisConfig = {
+    ...base,
+    branding: { primaryColor: "#aa0000", accentColor: "#00ff00" },
+  };
+  const r0 = calculatePraxis(base);
+  const r1 = calculatePraxis(withBrand);
+  console.assert(
+    approxEqual(r1.ueberschuss, r0.ueberschuss),
+    "Test 17a: ueberschuss mit branding gleich.",
+  );
+  console.assert(
+    approxEqual(r1.revenueTherapy, r0.revenueTherapy),
+    "Test 17b: revenueTherapy mit branding gleich.",
+  );
+}
+
+// Test 18: normalizePraxisConfig branding.
+{
+  const noBrand = normalizePraxisConfig({});
+  console.assert(
+    Object.keys(noBrand.branding ?? {}).length === 0,
+    "Test 18a: ohne branding-Feld → leeres Objekt.",
+  );
+
+  const invalidPrimary = normalizePraxisConfig({
+    branding: { primaryColor: "red" },
+  });
+  console.assert(
+    invalidPrimary.branding?.primaryColor === undefined,
+    "Test 18b: ungueltiges primary ignoriert.",
+  );
+
+  const validPrimary = normalizePraxisConfig({
+    branding: { primaryColor: "#aabbcc" },
+  });
+  console.assert(
+    validPrimary.branding?.primaryColor === "#aabbcc",
+    "Test 18c: gueltiges Hex uebernommen.",
+  );
+}
+
+// Test 19: resolveBranding.
+{
+  const d = resolveBranding(undefined);
+  console.assert(
+    d.primary === DEFAULT_PRIMARY && d.accent === DEFAULT_ACCENT,
+    "Test 19a: Defaults ohne branding.",
+  );
+
+  const onlyP = resolveBranding({ primaryColor: "#000000" });
+  console.assert(onlyP.primary === "#000000", "Test 19b: primary gesetzt.");
+  console.assert(onlyP.accent !== "#000000", "Test 19c: accent abgeleitet (heller).");
+
+  const both = resolveBranding({
+    primaryColor: "#000000",
+    accentColor: "#ffffff",
+  });
+  console.assert(both.primary === "#000000" && both.accent === "#ffffff", "Test 19d: beide gesetzt.");
 }
 
 console.log("Alle Engine-Tests erfolgreich.");
