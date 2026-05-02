@@ -1,11 +1,13 @@
 "use client";
 
-import { C } from "@/lib/colors";
+import { useEffect } from "react";
 import {
   mixChannelEuroPerHour,
   type RevenueConfigDirect,
   type RevenueConfigMix,
 } from "@/lib/engine";
+import Card from "./ui/Card";
+import Eyebrow from "./ui/Eyebrow";
 import { StepSlider } from "./StepSlider";
 
 type RevenuePanelProps = {
@@ -36,56 +38,100 @@ const fmt2 = new Intl.NumberFormat("de-DE", {
   maximumFractionDigits: 2,
 });
 
+const pctLab = new Intl.NumberFormat("de-DE", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 1,
+});
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, n));
+}
+
+function ModePill({
+  active,
+  children,
+  onClick,
+}: {
+  active: boolean;
+  children: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+        active
+          ? "bg-white text-brand-primary shadow-sm"
+          : "text-brand-muted hover:text-brand-ink"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
   const selfPct =
     config.mode === "mix"
       ? Math.max(0, 100 - config.gkvPct - config.pkvPct - config.bgPct)
       : 0;
 
-  const btnActive = (active: boolean) =>
-    active
-      ? { backgroundColor: C.primary, color: C.white, border: `1px solid ${C.primary}` }
-      : { backgroundColor: C.white, color: C.primary, border: `1px solid ${C.lightBg2}` };
+  useEffect(() => {
+    if (config.mode === "direct") {
+      const revPerHour = clamp(config.revPerHour, 30, 200);
+      if (revPerHour !== config.revPerHour) {
+        onChange({ mode: "direct", revPerHour });
+      }
+      return;
+    }
+    const utilization = clamp(config.utilization, 50, 95);
+    const treatmentsPerHour = clamp(config.treatmentsPerHour, 1, 4);
+    if (
+      utilization !== config.utilization ||
+      treatmentsPerHour !== config.treatmentsPerHour
+    ) {
+      onChange({ ...config, utilization, treatmentsPerHour });
+    }
+  }, [config, onChange]);
 
   return (
-    <section
-      className="space-y-4 rounded-xl border p-4 shadow-sm"
-      style={{ backgroundColor: C.white, borderColor: C.lightBg2 }}
-    >
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
+    <Card variant="default">
+      <Eyebrow>Erlöse</Eyebrow>
+      <h3 className="mb-4 mt-4 text-xl font-bold text-brand-ink">
+        Erlös-Modell
+      </h3>
+
+      <div className="mb-6 inline-flex rounded-full bg-brand-bg p-1">
+        <ModePill
+          active={config.mode === "direct"}
           onClick={() => onChange(defaultDirect)}
-          className="rounded-md px-3 py-2 text-sm font-medium"
-          style={btnActive(config.mode === "direct")}
         >
-          Direkt
-        </button>
-        <button
-          type="button"
+          Direct
+        </ModePill>
+        <ModePill
+          active={config.mode === "mix"}
           onClick={() => onChange(defaultMix)}
-          className="rounded-md px-3 py-2 text-sm font-medium"
-          style={btnActive(config.mode === "mix")}
         >
           Mix
-        </button>
+        </ModePill>
       </div>
 
       {config.mode === "direct" ? (
         <StepSlider
           label="Erlös pro Stunde"
           value={config.revPerHour}
-          min={0}
-          max={300}
+          min={30}
+          max={200}
           step={1}
           unit="€/h"
           hint="35 € (nur GKV) | 65 € (Mix) | 85 € (Premium)"
           onChange={(revPerHour) => onChange({ mode: "direct", revPerHour })}
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-1">
           <StepSlider
-            label="GKV-Anteil"
+            label={`GKV-Anteil (${pctLab.format(config.gkvPct)} %)`}
             value={config.gkvPct}
             min={0}
             max={100}
@@ -95,7 +141,7 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
             onChange={(gkvPct) => onChange({ ...config, gkvPct })}
           />
           <StepSlider
-            label="PKV-Anteil"
+            label={`PKV-Anteil (${pctLab.format(config.pkvPct)} %)`}
             value={config.pkvPct}
             min={0}
             max={100}
@@ -104,7 +150,7 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
             onChange={(pkvPct) => onChange({ ...config, pkvPct })}
           />
           <StepSlider
-            label="BG-Anteil"
+            label={`BG-Anteil (${pctLab.format(config.bgPct)} %)`}
             value={config.bgPct}
             min={0}
             max={100}
@@ -113,110 +159,121 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
             hint="0 % | 5 % (typisch) | 20 %"
             onChange={(bgPct) => onChange({ ...config, bgPct })}
           />
-          <p
-            className="rounded-md px-3 py-2 text-sm"
-            style={{ backgroundColor: C.lightBg, color: C.gray }}
-          >
-            Selbstzahler-Anteil: {selfPct} %
+          <p className="mb-3 px-4 text-xs text-brand-muted">
+            Selbstzahler-Anteil (Rest):{" "}
+            <span className="font-semibold tabular-nums text-brand-text">
+              {pctLab.format(selfPct)} %
+            </span>
+            {config.gkvPct + config.pkvPct + config.bgPct > 100
+              ? " — über 100 % zusammen → Selbstzahler auf 0 % begrenzt"
+              : null}
           </p>
+
           <StepSlider
-            label="Ø GKV-Vergütung pro Behandlung"
+            label="Ø GKV €/Behandlung"
             value={config.gkvPerTreatment}
             min={0}
             max={100}
             step={0.5}
             unit="€"
-            onChange={(gkvPerTreatment) => onChange({ ...config, gkvPerTreatment })}
+            onChange={(gkvPerTreatment) =>
+              onChange({ ...config, gkvPerTreatment })
+            }
           />
           <StepSlider
-            label="Ø PKV-Vergütung pro Behandlung"
+            label="Ø PKV €/Behandlung"
             value={config.pkvPerTreatment}
             min={0}
             max={100}
             step={0.5}
             unit="€"
-            onChange={(pkvPerTreatment) => onChange({ ...config, pkvPerTreatment })}
+            onChange={(pkvPerTreatment) =>
+              onChange({ ...config, pkvPerTreatment })
+            }
           />
           <StepSlider
-            label="Ø BG-Vergütung pro Behandlung"
+            label="Ø BG €/Behandlung"
             value={config.bgPerTreatment}
             min={0}
             max={100}
             step={0.5}
             unit="€"
             hint="meist über GKV, unter PKV"
-            onChange={(bgPerTreatment) => onChange({ ...config, bgPerTreatment })}
+            onChange={(bgPerTreatment) =>
+              onChange({ ...config, bgPerTreatment })
+            }
           />
           <StepSlider
-            label="Ø Selbstzahler pro Behandlung"
+            label="Ø Selbstzahler €/Behandlung"
             value={config.selfPerTreatment}
             min={0}
             max={100}
             step={0.5}
             unit="€"
-            onChange={(selfPerTreatment) => onChange({ ...config, selfPerTreatment })}
+            onChange={(selfPerTreatment) =>
+              onChange({ ...config, selfPerTreatment })
+            }
           />
           <StepSlider
             label="Behandlungen pro Stunde"
             value={config.treatmentsPerHour}
             min={1}
             max={4}
-            step={0.5}
-            onChange={(treatmentsPerHour) => onChange({ ...config, treatmentsPerHour })}
+            step={0.1}
+            unit="Beh./Std."
+            hint="1,0 … 4,0"
+            onChange={(treatmentsPerHour) =>
+              onChange({ ...config, treatmentsPerHour })
+            }
           />
           <StepSlider
             label="Auslastung"
             value={config.utilization}
-            min={0}
-            max={100}
-            step={5}
+            min={50}
+            max={95}
+            step={1}
             unit="%"
-            hint="50 % | 70 % (realistisch) | 95 %"
+            hint="50 % … 95 %"
             onChange={(utilization) => onChange({ ...config, utilization })}
           />
 
           <MixSummary config={config} />
         </div>
       )}
-    </section>
+    </Card>
   );
 }
 
 function MixSummary({ config }: { config: RevenueConfigMix }) {
   const parts = mixChannelEuroPerHour(config);
-  const u = config.utilization;
-  const tph = config.treatmentsPerHour;
+  const selfPct = parts.selfPct;
+  const avgPerTreatment =
+    (config.gkvPct * config.gkvPerTreatment +
+      config.pkvPct * config.pkvPerTreatment +
+      config.bgPct * config.bgPerTreatment +
+      selfPct * config.selfPerTreatment) /
+    100;
+
+  const line = [
+    `GKV ${fmt2.format(parts.gkv)} €/h`,
+    `PKV ${fmt2.format(parts.pkv)} €/h`,
+    `BG ${fmt2.format(parts.bg)} €/h`,
+    `SZ ${fmt2.format(parts.self)} €/h`,
+  ].join(" · ");
 
   return (
     <div
-      className="space-y-2 rounded-lg border p-3 text-sm"
-      style={{ borderColor: C.accent, backgroundColor: C.lightBg }}
+      className="mt-4 rounded-xl border border-[var(--color-brand-border-accent)] bg-[var(--color-brand-surface-cool)] p-4 text-sm text-brand-text"
     >
-      <p className="font-semibold" style={{ color: C.primary }}>
-        Erlös-Zusammenfassung (Mix)
+      <p className="text-base font-semibold text-brand-ink">
+        Ø €/Behandlung (gewichtet):{" "}
+        <span className="tabular-nums">{fmt2.format(avgPerTreatment)} €</span>
       </p>
-      <p style={{ color: C.gray }}>
-        Effektiver Erlös / Anwesenheitsstunde:{" "}
-        <strong style={{ color: C.primary }}>{fmt2.format(parts.effective)} €/h</strong>
+      <p className="mt-2 text-base font-semibold text-brand-ink">
+        Effektiver €/Anwesenheitsstunde:{" "}
+        <span className="tabular-nums">{fmt2.format(parts.effective)} €/h</span>
       </p>
-      <ul className="list-inside list-disc space-y-1" style={{ color: C.gray }}>
-        <li>
-          GKV ({config.gkvPct}%): {fmt2.format(config.gkvPerTreatment)} €/Beh. × {tph} Beh./Std. ×{" "}
-          {u}% = {fmt2.format(parts.gkv)} €/Std.
-        </li>
-        <li>
-          PKV ({config.pkvPct}%): {fmt2.format(config.pkvPerTreatment)} €/Beh. × {tph} Beh./Std. ×{" "}
-          {u}% = {fmt2.format(parts.pkv)} €/Std.
-        </li>
-        <li>
-          BG ({config.bgPct}%): {fmt2.format(config.bgPerTreatment)} €/Beh. × {tph} Beh./Std. × {u}% ={" "}
-          {fmt2.format(parts.bg)} €/Std.
-        </li>
-        <li>
-          Selbstzahler ({parts.selfPct}%): {fmt2.format(config.selfPerTreatment)} €/Beh. × {tph}{" "}
-          Beh./Std. × {u}% = {fmt2.format(parts.self)} €/Std.
-        </li>
-      </ul>
+      <p className="mt-3 text-xs leading-relaxed text-brand-muted">{line}</p>
     </div>
   );
 }

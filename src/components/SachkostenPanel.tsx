@@ -1,6 +1,6 @@
 "use client";
 
-import { C } from "@/lib/colors";
+import { useEffect } from "react";
 import {
   getSachkostenJahr,
   type SachkostenConfig,
@@ -10,6 +10,8 @@ import {
   sachkostenDetailToDirect,
   sachkostenDirectToDetail,
 } from "@/lib/praxis-config";
+import Card from "./ui/Card";
+import Eyebrow from "./ui/Eyebrow";
 import { StepSlider } from "./StepSlider";
 
 type SachkostenPanelProps = {
@@ -19,13 +21,40 @@ type SachkostenPanelProps = {
 
 const euro0 = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
 
-export function SachkostenPanel({ config, onChange }: SachkostenPanelProps) {
-  const btnActive = (active: boolean) =>
-    active
-      ? { backgroundColor: C.primary, color: C.white, border: `1px solid ${C.primary}` }
-      : { backgroundColor: C.white, color: C.primary, border: `1px solid ${C.lightBg2}` };
+function ModePill({
+  active,
+  children,
+  onClick,
+}: {
+  active: boolean;
+  children: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+        active
+          ? "bg-white text-brand-primary shadow-sm"
+          : "text-brand-muted hover:text-brand-ink"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
 
+export function SachkostenPanel({ config, onChange }: SachkostenPanelProps) {
   const detailSum = config.mode === "detail" ? getSachkostenJahr(config) : null;
+
+  useEffect(() => {
+    if (config.mode !== "direct") return;
+    const value = Math.min(100000, Math.max(5000, config.value));
+    if (value !== config.value) {
+      onChange({ mode: "direct", value });
+    }
+  }, [config, onChange]);
 
   const setDetailField = <K extends keyof Omit<SachkostenConfigDetail, "mode">>(
     key: K,
@@ -39,63 +68,45 @@ export function SachkostenPanel({ config, onChange }: SachkostenPanelProps) {
   };
 
   return (
-    <section
-      className="space-y-4 rounded-xl border p-4 shadow-sm"
-      style={{ backgroundColor: C.white, borderColor: C.lightBg2 }}
-    >
-      <p className="text-sm font-medium" style={{ color: C.gray }}>
-        Sachkosten (ohne Miete)
-      </p>
+    <Card variant="default">
+      <Eyebrow>Sachkosten</Eyebrow>
+      <h3 className="mb-4 mt-4 text-xl font-bold text-brand-ink">Sachkosten</h3>
 
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
+      <div className="mb-6 inline-flex rounded-full bg-brand-bg p-1">
+        <ModePill
+          active={config.mode === "direct"}
           onClick={() => {
             if (config.mode === "detail") {
               onChange(sachkostenDetailToDirect(config));
             }
           }}
-          className="rounded-md px-3 py-2 text-sm font-medium"
-          style={btnActive(config.mode === "direct")}
         >
-          Direkt
-        </button>
-        <button
-          type="button"
+          Direct
+        </ModePill>
+        <ModePill
+          active={config.mode === "detail"}
           onClick={() => {
             if (config.mode === "direct") {
               onChange(sachkostenDirectToDetail(config));
             }
           }}
-          className="rounded-md px-3 py-2 text-sm font-medium"
-          style={btnActive(config.mode === "detail")}
         >
           Detail
-        </button>
+        </ModePill>
       </div>
 
       {config.mode === "direct" ? (
         <StepSlider
-          label="Sachkosten pro Jahr"
+          label="Sachkosten gesamt/Jahr"
           value={config.value}
-          min={0}
-          max={80000}
-          step={1000}
+          min={5000}
+          max={100000}
+          step={500}
           unit="€"
           onChange={(value) => onChange({ mode: "direct", value })}
         />
       ) : (
-        <div className="space-y-3">
-          <p
-            className="rounded-lg border px-3 py-2 text-sm font-medium tabular-nums"
-            style={{
-              borderColor: C.lightBg2,
-              backgroundColor: C.lightBg,
-              color: C.primary,
-            }}
-          >
-            Summe Sachkosten: {euro0.format(detailSum ?? 0)} €
-          </p>
+        <div className="space-y-1">
           <StepSlider
             label="Raum-Nebenkosten"
             value={config.raumNebenkosten}
@@ -115,7 +126,7 @@ export function SachkostenPanel({ config, onChange }: SachkostenPanelProps) {
             onChange={(value) => setDetailField("material", value)}
           />
           <StepSlider
-            label="Software"
+            label="Software & Lizenzen"
             value={config.software}
             min={0}
             max={20000}
@@ -150,8 +161,16 @@ export function SachkostenPanel({ config, onChange }: SachkostenPanelProps) {
             unit="€"
             onChange={(value) => setDetailField("sonstiges", value)}
           />
+
+          <div
+            className="mt-4 rounded-xl border border-[var(--color-brand-border-accent)] bg-[var(--color-brand-surface-cool)] p-4"
+          >
+            <p className="text-base font-semibold text-brand-ink tabular-nums">
+              Summe: {euro0.format(detailSum ?? 0)} €/Jahr
+            </p>
+          </div>
         </div>
       )}
-    </section>
+    </Card>
   );
 }

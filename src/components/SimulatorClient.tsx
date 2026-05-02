@@ -19,6 +19,7 @@ import type {
   PraxisResult,
   RevenueConfigDirect,
   RevenueConfigMix,
+  SachkostenConfig,
 } from "@/lib/engine";
 import { calculatePraxis } from "@/lib/engine";
 
@@ -27,7 +28,13 @@ const SOFT_LIMIT = 25;
 type Baseline = {
   config: PraxisConfig;
   result: PraxisResult;
+  savedAt: string;
 };
+
+function formatBaselineLabel(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString("de-DE");
+}
 
 type SimulatorClientProps = {
   initialConfig: PraxisConfig;
@@ -149,7 +156,11 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
   };
 
   const saveBaseline = () => {
-    setBaseline({ config, result });
+    setBaseline({
+      config,
+      result,
+      savedAt: new Date().toISOString(),
+    });
   };
 
   const resetToBaseline = () => {
@@ -237,9 +248,13 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
     setExpanded((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updateRevenue = (revenue: RevenueConfigDirect | RevenueConfigMix) => {
+  const updateRevenue = useCallback((revenue: RevenueConfigDirect | RevenueConfigMix) => {
     setConfig((prev) => ({ ...prev, revenue }));
-  };
+  }, []);
+
+  const updateSachkosten = useCallback((sachkosten: SachkostenConfig) => {
+    setConfig((prev) => ({ ...prev, sachkosten }));
+  }, []);
 
   const loadScenario = (raw: unknown) => {
     const normalized = normalizePraxisConfig(raw);
@@ -254,104 +269,6 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
       <KpiBar result={result} baseline={baseline} />
 
       <main className="w-full space-y-6 py-6">
-        <div
-          className="flex flex-wrap items-center gap-2 rounded-lg border p-3"
-          style={{ borderColor: C.lightBg2, backgroundColor: C.white }}
-        >
-          {baseline ? (
-            <>
-              <button
-                type="button"
-                onClick={resetToBaseline}
-                className="rounded-md px-3 py-1.5 text-sm font-medium"
-                style={{ backgroundColor: C.primary, color: C.white }}
-              >
-                ↺ Auf Baseline zurücksetzen
-              </button>
-              <button
-                type="button"
-                onClick={saveBaseline}
-                className="rounded-md border px-3 py-1.5 text-sm font-medium"
-                style={{ borderColor: C.lightBg2, color: C.primary }}
-              >
-                Baseline aktualisieren
-              </button>
-              <button
-                type="button"
-                data-baseline-scenario-trigger
-                onClick={() => {
-                  setScenarioSaveSuccessFlash(false);
-                  if (successFlashTimeoutRef.current) {
-                    clearTimeout(successFlashTimeoutRef.current);
-                    successFlashTimeoutRef.current = null;
-                  }
-                  setSavingScenario((open) => {
-                    if (open) {
-                      setScenarioName("");
-                      setSaveError(null);
-                      return false;
-                    }
-                    setSaveError(null);
-                    return true;
-                  });
-                }}
-                disabled={scenarioSavePending || scenarioSaveSuccessFlash}
-                className="rounded-md border px-3 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-70"
-                style={{ borderColor: C.lightBg2, color: C.primary }}
-              >
-                {scenarioSaveSuccessFlash ? "Gespeichert ✓" : "Als Szenario speichern"}
-              </button>
-              {savingScenario ? (
-                <div
-                  ref={scenarioInlineRef}
-                  className="flex min-w-[min(100%,20rem)] flex-1 flex-wrap items-center gap-2 sm:flex-none"
-                >
-                  <input
-                    type="text"
-                    value={scenarioName}
-                    onChange={(event) => setScenarioName(event.target.value)}
-                    placeholder="Name des Szenarios"
-                    autoFocus
-                    className="min-w-[12rem] flex-1 rounded-md border px-3 py-1.5 text-sm"
-                    style={{ borderColor: C.lightBg2, color: C.primary }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => void handleSaveBaselineScenario()}
-                    disabled={scenarioSavePending}
-                    className="rounded-md px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"
-                    style={{ backgroundColor: C.primary }}
-                  >
-                    {scenarioSavePending ? "…" : "Speichern"}
-                  </button>
-                  {saveError ? (
-                    <span className="text-xs" style={{ color: C.red }}>
-                      {saveError}
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
-              <button
-                type="button"
-                onClick={clearBaseline}
-                className="ml-auto rounded-md border px-3 py-1.5 text-xs"
-                style={{ borderColor: C.lightBg2, color: C.lightGray }}
-              >
-                Baseline löschen
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={saveBaseline}
-              className="rounded-md px-3 py-1.5 text-sm font-medium"
-              style={{ backgroundColor: C.primary, color: C.white }}
-            >
-              Aktuellen Stand als Baseline merken
-            </button>
-          )}
-        </div>
-
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-2">
@@ -463,9 +380,7 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
               />
               <SachkostenPanel
                 config={config.sachkosten}
-                onChange={(sachkosten) =>
-                  setConfig((prev) => ({ ...prev, sachkosten }))
-                }
+                onChange={updateSachkosten}
               />
               <StepSlider
                 label="GF-Gehalt pro Monat (nur GmbH)"
@@ -519,7 +434,47 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
           />
         ) : null}
 
-        <ScenarioPanel currentConfig={config} onLoad={loadScenario} />
+        <ScenarioPanel
+          currentConfig={config}
+          onLoad={loadScenario}
+          baselineScenarioInlineRef={scenarioInlineRef}
+          baseline={
+            baseline
+              ? {
+                  state: "active",
+                  savedLabel: formatBaselineLabel(baseline.savedAt),
+                  onReset: resetToBaseline,
+                  onUpdate: saveBaseline,
+                  onClear: clearBaseline,
+                  baselineScenario: {
+                    inlineOpen: savingScenario,
+                    scenarioName,
+                    onScenarioNameChange: setScenarioName,
+                    onToggleInline: () => {
+                      setScenarioSaveSuccessFlash(false);
+                      if (successFlashTimeoutRef.current) {
+                        clearTimeout(successFlashTimeoutRef.current);
+                        successFlashTimeoutRef.current = null;
+                      }
+                      setSavingScenario((open) => {
+                        if (open) {
+                          setScenarioName("");
+                          setSaveError(null);
+                          return false;
+                        }
+                        setSaveError(null);
+                        return true;
+                      });
+                    },
+                    onConfirmSave: handleSaveBaselineScenario,
+                    pending: scenarioSavePending,
+                    successFlash: scenarioSaveSuccessFlash,
+                    error: saveError,
+                  },
+                }
+              : { state: "empty", onRemember: saveBaseline }
+          }
+        />
       </main>
     </div>
   );
