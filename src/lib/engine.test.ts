@@ -144,6 +144,35 @@ const refDefaults = {
   const r = calculatePraxis(baseForGF);
   const empSum = r.employeeDetails.reduce((s, e) => s + e.cost, 0);
 
+  const totalEffHours = 10 * 52;
+  const expectedRevenueTherapy = totalEffHours * 50;
+  const expectedPersonal = 10 * 20 * 52 * 1.21;
+  const expectedTotalCost = expectedPersonal;
+  const expectedUeberschuss = expectedRevenueTherapy - expectedTotalCost;
+  const expectedPkRatio =
+    expectedRevenueTherapy === 0 ? 0 : expectedPersonal / expectedRevenueTherapy;
+
+  console.assert(
+    approxEqual(r.revenue, expectedRevenueTherapy),
+    "Test 4-Ref: revenue wie ohne GF/Entnahme-Felder.",
+  );
+  console.assert(
+    approxEqual(r.personalCost, expectedPersonal),
+    "Test 4-Ref: personalCost wie ohne GF/Entnahme-Felder.",
+  );
+  console.assert(
+    approxEqual(r.totalCost, expectedTotalCost),
+    "Test 4-Ref: totalCost wie ohne GF/Entnahme-Felder.",
+  );
+  console.assert(
+    approxEqual(r.ueberschuss, expectedUeberschuss),
+    "Test 4-Ref: ueberschuss wie ohne GF/Entnahme-Felder.",
+  );
+  console.assert(
+    approxEqual(r.personalCostRatio, expectedPkRatio),
+    "Test 4-Ref: personalCostRatio wie ohne GF/Entnahme-Felder.",
+  );
+
   console.assert(
     approxEqual(r.personalCostMitarbeitende, empSum),
     "Test 4a: personalCostMitarbeitende = Summe MA-Kosten.",
