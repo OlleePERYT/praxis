@@ -1,4 +1,6 @@
 import NextAuth from "next-auth";
+import type { NextAuthRequest } from "next-auth";
+import type { NextFetchEvent, NextMiddleware, NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { authConfig } from "@/auth.config";
 
@@ -17,7 +19,7 @@ function getSubdomain(hostHeader: string | null): string | null {
   return parts[0] ?? null;
 }
 
-export default auth((req) => {
+const middlewareImpl = (req: NextAuthRequest) => {
   const { nextUrl } = req;
   const { pathname } = nextUrl;
 
@@ -50,7 +52,13 @@ export default auth((req) => {
       headers: requestHeaders,
     },
   });
-});
+};
+
+const withAuth = auth(middlewareImpl) as unknown as NextMiddleware;
+
+export async function proxy(request: NextRequest, event: NextFetchEvent) {
+  return withAuth(request, event);
+}
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
