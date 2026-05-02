@@ -16,7 +16,9 @@ export function defaultEmployee(index: number): Employee {
     hours: 20,
     rate: 25,
     vacation: 30,
-    sick: 10,
+    sick: 5,
+    training: 5,
+    trainingCost: 1000,
   };
 }
 
@@ -46,6 +48,8 @@ export function normalizePraxisConfig(rawConfig: unknown): PraxisConfig {
         rate: asNumber(e.rate, fallback.rate),
         vacation: asNumber(e.vacation, fallback.vacation),
         sick: asNumber(e.sick, fallback.sick),
+        training: asNumber(e.training, fallback.training),
+        trainingCost: asNumber(e.trainingCost, fallback.trainingCost),
       };
     });
   }

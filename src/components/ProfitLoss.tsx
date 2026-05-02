@@ -48,7 +48,7 @@ export function ProfitLoss({ result, employees }: ProfitLossProps) {
           if (!d) return null;
           const maRevShare =
             totalEff > 0 ? result.revenueTherapy * (d.effHours / totalEff) : 0;
-          const maDB = maRevShare - d.cost;
+          const maDB = maRevShare - d.cost - d.trainingCost;
           return (
             <Row
               key={i}
@@ -70,6 +70,9 @@ export function ProfitLoss({ result, employees }: ProfitLossProps) {
         </p>
         <Row label="Miete (Jahr)" value={result.mieteJahr} />
         <Row label="Übrige Sachkosten (Jahr)" value={result.sachkostenJahr} />
+        {result.trainingCostTotal > 0 ? (
+          <Row label="Weiterbildungskosten" value={result.trainingCostTotal} />
+        ) : null}
       </div>
 
       <div className="border-t pt-3" style={{ borderColor: C.lightBg2 }}>

@@ -8,6 +8,10 @@ export interface Employee {
   rate: number;
   vacation: number;
   sick: number;
+  /** Weiterbildungstage pro Jahr (wie Urlaub/Krankheit in Arbeitstage/5 → Wochen). */
+  training: number;
+  /** Weiterbildungskosten pro Jahr (Sachkosten SKR03/04, nicht Personalkosten). */
+  trainingCost: number;
 }
 
 export interface RevenueConfigDirect {
@@ -51,6 +55,8 @@ export interface PraxisResult {
   ueberschussNachEntnahme: number;
   mieteJahr: number;
   sachkostenJahr: number;
+  /** Summe Weiterbildungskosten aller MA (Sachkosten). */
+  trainingCostTotal: number;
   untermieteJahr: number;
   totalSach: number;
   /** Jahresumsatz (Therapie + Untermiete); identisch zu totalIncome */
@@ -64,6 +70,7 @@ export interface PraxisResult {
     effWeeks: number;
     effHours: number;
     cost: number;
+    trainingCost: number;
   }[];
 }
 
@@ -106,7 +113,8 @@ export function mixChannelEuroPerHour(config: RevenueConfigMix): {
 
 export function calculatePraxis(config: PraxisConfig): PraxisResult {
   const employeeDetails = config.employees.map((employee) => {
-    const offWeeks = (employee.vacation + employee.sick) / 5;
+    const offWeeks =
+      (employee.vacation + employee.sick + employee.training) / 5;
     const effWeeks = WEEKS - offWeeks;
     const effHours = employee.hours * effWeeks;
     const cost = employee.rate * employee.hours * WEEKS * AG;
@@ -116,6 +124,7 @@ export function calculatePraxis(config: PraxisConfig): PraxisResult {
       effWeeks,
       effHours,
       cost,
+      trainingCost: employee.trainingCost,
     };
   });
 
@@ -138,9 +147,14 @@ export function calculatePraxis(config: PraxisConfig): PraxisResult {
   const gfGehaltJahr = config.gfGehaltMonat * 12;
   const personalCostMitGf = personalCost + gfGehaltJahr;
 
+  const trainingCostTotal = employeeDetails.reduce(
+    (s, e) => s + e.trainingCost,
+    0,
+  );
+
   const mieteJahr = config.mieteMonat * 12;
   const sachkostenJahr = config.sachkosten ?? SACH_OHNE_MIETE;
-  const totalSach = sachkostenJahr + mieteJahr;
+  const totalSach = sachkostenJahr + mieteJahr + trainingCostTotal;
   const totalCost = personalCostMitGf + totalSach;
 
   const ueberschuss = revenue - totalCost;
@@ -159,6 +173,7 @@ export function calculatePraxis(config: PraxisConfig): PraxisResult {
     ueberschussNachEntnahme,
     mieteJahr,
     sachkostenJahr,
+    trainingCostTotal,
     untermieteJahr,
     totalSach,
     revenue,

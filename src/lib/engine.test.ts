@@ -23,6 +23,8 @@ const refDefaults = {
         rate: 25,
         vacation: 30,
         sick: 5,
+        training: 0,
+        trainingCost: 0,
       },
     ],
     revenue: {
@@ -49,6 +51,8 @@ const refDefaults = {
         rate: 20,
         vacation: 0,
         sick: 0,
+        training: 0,
+        trainingCost: 0,
       },
     ],
     revenue: {
@@ -89,6 +93,8 @@ const refDefaults = {
         rate: 20,
         vacation: 0,
         sick: 0,
+        training: 0,
+        trainingCost: 0,
       },
     ],
     revenue: {
@@ -127,6 +133,8 @@ const refDefaults = {
         rate: 20,
         vacation: 0,
         sick: 0,
+        training: 0,
+        trainingCost: 0,
       },
     ],
     revenue: {
@@ -199,6 +207,8 @@ const refDefaults = {
         rate: 20,
         vacation: 0,
         sick: 0,
+        training: 0,
+        trainingCost: 0,
       },
     ],
     revenue: {
@@ -256,6 +266,8 @@ const refDefaults = {
         rate: 20,
         vacation: 0,
         sick: 0,
+        training: 0,
+        trainingCost: 0,
       },
     ],
     revenue: {
@@ -293,6 +305,152 @@ const refDefaults = {
   console.assert(
     approxEqual(eu.ueberschussNachEntnahme, reg.ueberschuss - 36000),
     "Test 6f: ueberschussNachEntnahme -36000.",
+  );
+}
+
+// Test 7: Regression – training=0, trainingCost=0 → gleiche Kennzahlen wie Referenz; trainingCostTotal 0.
+{
+  const config: PraxisConfig = {
+    employees: [
+      {
+        name: "Therapeutin 1",
+        hours: 10,
+        rate: 20,
+        vacation: 0,
+        sick: 0,
+        training: 0,
+        trainingCost: 0,
+      },
+    ],
+    revenue: {
+      mode: "direct",
+      revPerHour: 50,
+    },
+    mieteMonat: 0,
+    untermiete: 0,
+    sachkosten: 0,
+    gfGehaltMonat: 0,
+    inhaberEntnahmeMonat: 0,
+    ...refDefaults,
+  };
+
+  const r = calculatePraxis(config);
+  const totalEffHours = 10 * 52;
+  const expectedRevenueTherapy = totalEffHours * 50;
+  const expectedPersonal = 10 * 20 * 52 * 1.21;
+  const expectedUeberschuss = expectedRevenueTherapy - expectedPersonal;
+  const expectedPkRatio =
+    expectedRevenueTherapy === 0 ? 0 : expectedPersonal / expectedRevenueTherapy;
+
+  console.assert(r.trainingCostTotal === 0, "Test 7a: trainingCostTotal 0.");
+  console.assert(
+    approxEqual(r.ueberschuss, expectedUeberschuss),
+    "Test 7b: ueberschuss wie ohne Trainingsfelder.",
+  );
+  console.assert(
+    approxEqual(r.personalCostRatio, expectedPkRatio),
+    "Test 7c: personalCostRatio unveraendert.",
+  );
+}
+
+// Test 8: Trainings-Tage – effHours/Revenue sinken; Personalkosten und Sachkosten (ohne Fortbildungskosten) unveraendert.
+{
+  const baseEmp = {
+    name: "Therapeutin 1",
+    hours: 10,
+    rate: 20,
+    vacation: 0,
+    sick: 0,
+    training: 0,
+    trainingCost: 0,
+  };
+  const baseConfig: PraxisConfig = {
+    employees: [baseEmp],
+    revenue: {
+      mode: "direct",
+      revPerHour: 50,
+    },
+    mieteMonat: 0,
+    untermiete: 0,
+    sachkosten: 0,
+    ...refDefaults,
+  };
+
+  const baseline = calculatePraxis(baseConfig);
+  const withTraining = calculatePraxis({
+    ...baseConfig,
+    employees: [{ ...baseEmp, training: 10 }],
+  });
+
+  console.assert(
+    approxEqual(withTraining.trainingCostTotal, 0),
+    "Test 8a: trainingCostTotal 0 bei trainingCost=0.",
+  );
+  console.assert(
+    approxEqual(baseline.personalCost, withTraining.personalCost),
+    "Test 8b: Personalkosten unveraendert.",
+  );
+  console.assert(
+    approxEqual(baseline.totalSach, withTraining.totalSach),
+    "Test 8c: totalSach unveraendert (keine Fortbildungskosten).",
+  );
+  const effHoursBase = 10 * 52;
+  const effHoursTrain = 10 * (52 - 10 / 5);
+  const expectedRevDrop = (effHoursBase - effHoursTrain) * 50;
+  console.assert(
+    approxEqual(
+      baseline.revenueTherapy - withTraining.revenueTherapy,
+      expectedRevDrop,
+    ),
+    "Test 8d: Therapie-Umsatz sinkt um effHours-Delta * rev/h.",
+  );
+}
+
+// Test 9: Trainings-Kosten – Sachkosten/Überschuss; Personalkosten und PK-Quote unveraendert.
+{
+  const baseEmp = {
+    name: "Therapeutin 1",
+    hours: 10,
+    rate: 20,
+    vacation: 0,
+    sick: 0,
+    training: 0,
+    trainingCost: 0,
+  };
+  const baseConfig: PraxisConfig = {
+    employees: [baseEmp],
+    revenue: {
+      mode: "direct",
+      revPerHour: 50,
+    },
+    mieteMonat: 0,
+    untermiete: 0,
+    sachkosten: 0,
+    ...refDefaults,
+  };
+
+  const baseline = calculatePraxis(baseConfig);
+  const withCost = calculatePraxis({
+    ...baseConfig,
+    employees: [{ ...baseEmp, trainingCost: 2000 }],
+  });
+
+  console.assert(withCost.trainingCostTotal === 2000, "Test 9a: trainingCostTotal 2000.");
+  console.assert(
+    approxEqual(withCost.totalSach, baseline.totalSach + 2000),
+    "Test 9b: totalSach +2000.",
+  );
+  console.assert(
+    approxEqual(withCost.personalCost, baseline.personalCost),
+    "Test 9c: Personalkosten unveraendert.",
+  );
+  console.assert(
+    approxEqual(withCost.personalCostRatio, baseline.personalCostRatio),
+    "Test 9d: personalCostRatio unveraendert.",
+  );
+  console.assert(
+    approxEqual(withCost.ueberschuss, baseline.ueberschuss - 2000),
+    "Test 9e: ueberschuss -2000.",
   );
 }
 

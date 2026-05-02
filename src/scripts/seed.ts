@@ -15,6 +15,8 @@ const demoConfig = {
       rate: 25,
       vacation: 30,
       sick: 5,
+      training: 5,
+      trainingCost: 1000,
     },
   ],
   revenueMode: "direct",
