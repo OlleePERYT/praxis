@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ComparisonTable } from "./ComparisonTable";
 import { EmployeeCard } from "./EmployeeCard";
 import { KpiBar } from "./KpiBar";
@@ -37,7 +37,113 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
   const [config, setConfig] = useState<PraxisConfig>(initialConfig);
   const [baseline, setBaseline] = useState<Baseline | null>(null);
 
+  const [savingScenario, setSavingScenario] = useState(false);
+  const [scenarioName, setScenarioName] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [scenarioSavePending, setScenarioSavePending] = useState(false);
+  const [scenarioSaveSuccessFlash, setScenarioSaveSuccessFlash] = useState(false);
+
+  const scenarioInlineRef = useRef<HTMLDivElement | null>(null);
+  const successFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const result = useMemo(() => calculatePraxis(config), [config]);
+
+  const cancelScenarioInline = useCallback(() => {
+    setSavingScenario(false);
+    setScenarioName("");
+    setSaveError(null);
+  }, []);
+
+  const clearBaseline = () => {
+    setBaseline(null);
+    cancelScenarioInline();
+    setScenarioSaveSuccessFlash(false);
+    if (successFlashTimeoutRef.current) {
+      clearTimeout(successFlashTimeoutRef.current);
+      successFlashTimeoutRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (successFlashTimeoutRef.current) {
+        clearTimeout(successFlashTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!savingScenario) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        cancelScenarioInline();
+      }
+    };
+
+    const onMouseDown = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("[data-baseline-scenario-trigger]")) return;
+      const el = scenarioInlineRef.current;
+      if (el && !el.contains(event.target as Node)) {
+        cancelScenarioInline();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("mousedown", onMouseDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("mousedown", onMouseDown);
+    };
+  }, [savingScenario, cancelScenarioInline]);
+
+  const handleSaveBaselineScenario = async () => {
+    if (!baseline) return;
+    const trimmedName = scenarioName.trim();
+    if (!trimmedName) {
+      setSaveError("Bitte einen Namen eingeben.");
+      return;
+    }
+
+    setSaveError(null);
+    setScenarioSavePending(true);
+    const cleanedConfig: PraxisConfig = {
+      ...baseline.config,
+      employees: baseline.config.employees.filter((e) => e.hours > 0),
+    };
+
+    try {
+      const response = await fetch("/api/scenarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: trimmedName,
+          data: cleanedConfig,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = (await response.json().catch(() => ({}))) as { error?: string };
+        setSaveError(error.error ?? "Szenario konnte nicht gespeichert werden.");
+        return;
+      }
+
+      cancelScenarioInline();
+      setScenarioSaveSuccessFlash(true);
+      if (successFlashTimeoutRef.current) {
+        clearTimeout(successFlashTimeoutRef.current);
+      }
+      successFlashTimeoutRef.current = setTimeout(() => {
+        setScenarioSaveSuccessFlash(false);
+        successFlashTimeoutRef.current = null;
+      }, 2000);
+    } catch {
+      setSaveError("Netzwerkfehler.");
+    } finally {
+      setScenarioSavePending(false);
+    }
+  };
 
   const saveBaseline = () => {
     setBaseline({ config, result });
@@ -46,10 +152,6 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
   const resetToBaseline = () => {
     if (!baseline) return;
     setConfig(baseline.config);
-  };
-
-  const clearBaseline = () => {
-    setBaseline(null);
   };
 
   const sumWeeklyHours = useMemo(
@@ -124,6 +226,61 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
               >
                 Baseline aktualisieren
               </button>
+              <button
+                type="button"
+                data-baseline-scenario-trigger
+                onClick={() => {
+                  setScenarioSaveSuccessFlash(false);
+                  if (successFlashTimeoutRef.current) {
+                    clearTimeout(successFlashTimeoutRef.current);
+                    successFlashTimeoutRef.current = null;
+                  }
+                  setSavingScenario((open) => {
+                    if (open) {
+                      setScenarioName("");
+                      setSaveError(null);
+                      return false;
+                    }
+                    setSaveError(null);
+                    return true;
+                  });
+                }}
+                disabled={scenarioSavePending || scenarioSaveSuccessFlash}
+                className="rounded-md border px-3 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-70"
+                style={{ borderColor: C.lightBg2, color: C.primary }}
+              >
+                {scenarioSaveSuccessFlash ? "Gespeichert ✓" : "Als Szenario speichern"}
+              </button>
+              {savingScenario ? (
+                <div
+                  ref={scenarioInlineRef}
+                  className="flex min-w-[min(100%,20rem)] flex-1 flex-wrap items-center gap-2 sm:flex-none"
+                >
+                  <input
+                    type="text"
+                    value={scenarioName}
+                    onChange={(event) => setScenarioName(event.target.value)}
+                    placeholder="Name des Szenarios"
+                    autoFocus
+                    className="min-w-[12rem] flex-1 rounded-md border px-3 py-1.5 text-sm"
+                    style={{ borderColor: C.lightBg2, color: C.primary }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveBaselineScenario()}
+                    disabled={scenarioSavePending}
+                    className="rounded-md px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"
+                    style={{ backgroundColor: C.primary }}
+                  >
+                    {scenarioSavePending ? "…" : "Speichern"}
+                  </button>
+                  {saveError ? (
+                    <span className="text-xs" style={{ color: C.red }}>
+                      {saveError}
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
               <button
                 type="button"
                 onClick={clearBaseline}
