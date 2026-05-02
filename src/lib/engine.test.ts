@@ -9,6 +9,8 @@ const refDefaults = {
   refCosts: 0,
   refSurplus: 0,
   refLabel: "Bisher",
+  gfGehaltMonat: 0,
+  inhaberEntnahmeMonat: 0,
 };
 
 // Test 1: Direct-Modus, 1 Mitarbeiter, positiver Ueberschuss.
@@ -112,6 +114,156 @@ const refDefaults = {
       3600,
     ),
     "Test 3b fehlgeschlagen: Untermiete sollte Ueberschuss um 3600 erhoehen (sonstige Einnahme).",
+  );
+}
+
+// Test 4: Regression – GF und Entnahme 0 → gleiche Kernkennzahlen wie bisher; neue Felder konsistent.
+{
+  const baseForGF: PraxisConfig = {
+    employees: [
+      {
+        name: "Therapeutin 1",
+        hours: 10,
+        rate: 20,
+        vacation: 0,
+        sick: 0,
+      },
+    ],
+    revenue: {
+      mode: "direct",
+      revPerHour: 50,
+    },
+    mieteMonat: 0,
+    untermiete: 0,
+    sachkosten: 0,
+    gfGehaltMonat: 0,
+    inhaberEntnahmeMonat: 0,
+    ...refDefaults,
+  };
+
+  const r = calculatePraxis(baseForGF);
+  const empSum = r.employeeDetails.reduce((s, e) => s + e.cost, 0);
+
+  console.assert(
+    approxEqual(r.personalCostMitarbeitende, empSum),
+    "Test 4a: personalCostMitarbeitende = Summe MA-Kosten.",
+  );
+  console.assert(
+    approxEqual(r.personalCost, empSum),
+    "Test 4b: personalCost bei GF=0 wie MA-Summe.",
+  );
+  console.assert(r.gfGehaltJahr === 0, "Test 4c: gfGehaltJahr 0.");
+  console.assert(r.inhaberEntnahmeJahr === 0, "Test 4d: inhaberEntnahmeJahr 0.");
+  console.assert(
+    approxEqual(r.ueberschussNachEntnahme, r.ueberschuss),
+    "Test 4e: ueberschussNachEntnahme === ueberschuss ohne Entnahme.",
+  );
+}
+
+// Test 5: GmbH – GF-Gehalt erhöht Personalkosten und Gesamtkosten, Entnahme 0.
+{
+  const baseForGF: PraxisConfig = {
+    employees: [
+      {
+        name: "Therapeutin 1",
+        hours: 10,
+        rate: 20,
+        vacation: 0,
+        sick: 0,
+      },
+    ],
+    revenue: {
+      mode: "direct",
+      revPerHour: 50,
+    },
+    mieteMonat: 0,
+    untermiete: 0,
+    sachkosten: 0,
+    gfGehaltMonat: 0,
+    inhaberEntnahmeMonat: 0,
+    ...refDefaults,
+  };
+
+  const reg = calculatePraxis(baseForGF);
+  const gmbh = calculatePraxis({ ...baseForGF, gfGehaltMonat: 5000 });
+
+  console.assert(gmbh.gfGehaltJahr === 60000, "Test 5a: gfGehaltJahr 60000.");
+  console.assert(
+    approxEqual(
+      gmbh.personalCostMitarbeitende,
+      reg.personalCostMitarbeitende,
+    ),
+    "Test 5b: MA-Personalkosten unveraendert.",
+  );
+  console.assert(
+    approxEqual(gmbh.personalCost, reg.personalCost + 60000),
+    "Test 5c: personalCost inkl. GF.",
+  );
+  console.assert(
+    approxEqual(gmbh.totalCost, reg.totalCost + 60000),
+    "Test 5d: totalCost +60000.",
+  );
+  console.assert(
+    approxEqual(gmbh.ueberschuss, reg.ueberschuss - 60000),
+    "Test 5e: ueberschuss -60000.",
+  );
+  console.assert(
+    gmbh.personalCostRatio > reg.personalCostRatio,
+    "Test 5f: PK-Quote mit GF hoeher.",
+  );
+  console.assert(
+    approxEqual(gmbh.ueberschussNachEntnahme, gmbh.ueberschuss),
+    "Test 5g: ueberschussNachEntnahme ohne Entnahme = ueberschuss.",
+  );
+}
+
+// Test 6: Einzelunternehmen – Entnahme mindert nur ueberschussNachEntnahme, nicht GuV-Kennzahlen.
+{
+  const baseForGF: PraxisConfig = {
+    employees: [
+      {
+        name: "Therapeutin 1",
+        hours: 10,
+        rate: 20,
+        vacation: 0,
+        sick: 0,
+      },
+    ],
+    revenue: {
+      mode: "direct",
+      revPerHour: 50,
+    },
+    mieteMonat: 0,
+    untermiete: 0,
+    sachkosten: 0,
+    gfGehaltMonat: 0,
+    inhaberEntnahmeMonat: 0,
+    ...refDefaults,
+  };
+
+  const reg = calculatePraxis(baseForGF);
+  const eu = calculatePraxis({ ...baseForGF, inhaberEntnahmeMonat: 3000 });
+
+  console.assert(eu.inhaberEntnahmeJahr === 36000, "Test 6a: inhaberEntnahmeJahr 36000.");
+  console.assert(
+    approxEqual(eu.revenue, reg.revenue),
+    "Test 6b: revenue unveraendert.",
+  );
+  console.assert(
+    approxEqual(eu.personalCost, reg.personalCost),
+    "Test 6c: personalCost unveraendert.",
+  );
+  console.assert(
+    approxEqual(eu.totalCost, reg.totalCost),
+    "Test 6d: totalCost unveraendert.",
+  );
+  console.assert(
+    approxEqual(eu.ueberschuss, reg.ueberschuss),
+    "Test 6e: ueberschuss unveraendert.",
+  );
+  console.assert(
+    approxEqual(eu.ueberschussNachEntnahme, reg.ueberschuss - 36000),
+    "Test 6f: ueberschussNachEntnahme -36000.",
   );
 }
 

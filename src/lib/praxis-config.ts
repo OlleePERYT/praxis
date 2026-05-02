@@ -84,5 +84,7 @@ export function normalizePraxisConfig(rawConfig: unknown): PraxisConfig {
     refLabel: typeof source.refLabel === "string" && source.refLabel.trim().length > 0
       ? source.refLabel
       : "Bisher",
+    gfGehaltMonat: asNumber(source.gfGehaltMonat, 0),
+    inhaberEntnahmeMonat: asNumber(source.inhaberEntnahmeMonat, 0),
   };
 }

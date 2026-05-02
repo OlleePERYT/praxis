@@ -36,11 +36,19 @@ export interface PraxisConfig {
   refCosts: number;
   refSurplus: number;
   refLabel: string;
+  gfGehaltMonat: number;
+  inhaberEntnahmeMonat: number;
 }
 
 export interface PraxisResult {
   totalCost: number;
+  /** Personalkosten inkl. GF-Gehalt (Anzeige / Quote). */
   personalCost: number;
+  /** Personalkosten nur Mitarbeitende (ohne GF-Gehalt). */
+  personalCostMitarbeitende: number;
+  gfGehaltJahr: number;
+  inhaberEntnahmeJahr: number;
+  ueberschussNachEntnahme: number;
   mieteJahr: number;
   sachkostenJahr: number;
   untermieteJahr: number;
@@ -126,17 +134,29 @@ export function calculatePraxis(config: PraxisConfig): PraxisResult {
     (sum, employee) => sum + employee.cost,
     0,
   );
+  const personalCostMitarbeitende = personalCost;
+  const gfGehaltJahr = config.gfGehaltMonat * 12;
+  const personalCostMitGf = personalCost + gfGehaltJahr;
+
   const mieteJahr = config.mieteMonat * 12;
   const sachkostenJahr = config.sachkosten ?? SACH_OHNE_MIETE;
   const totalSach = sachkostenJahr + mieteJahr;
-  const totalCost = personalCost + totalSach;
+  const totalCost = personalCostMitGf + totalSach;
 
   const ueberschuss = revenue - totalCost;
-  const personalCostRatio = revenue === 0 ? 0 : personalCost / revenue;
+  const personalCostRatio =
+    revenue === 0 ? 0 : personalCostMitGf / revenue;
+
+  const inhaberEntnahmeJahr = config.inhaberEntnahmeMonat * 12;
+  const ueberschussNachEntnahme = ueberschuss - inhaberEntnahmeJahr;
 
   return {
     totalCost,
-    personalCost,
+    personalCost: personalCostMitGf,
+    personalCostMitarbeitende,
+    gfGehaltJahr,
+    inhaberEntnahmeJahr,
+    ueberschussNachEntnahme,
     mieteJahr,
     sachkostenJahr,
     untermieteJahr,
