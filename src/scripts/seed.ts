@@ -23,6 +23,7 @@ const demoConfig = {
   revPerHour: 75,
   mieteMonat: 1200,
   untermiete: 0,
+  handelswareJahr: 0,
   sachkosten: { mode: "direct", value: 24020 },
 };
 

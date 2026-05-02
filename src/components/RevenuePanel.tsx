@@ -22,8 +22,10 @@ const defaultMix: RevenueConfigMix = {
   mode: "mix",
   gkvPct: 70,
   pkvPct: 30,
+  bgPct: 0,
   gkvPerTreatment: 35,
   pkvPerTreatment: 49,
+  bgPerTreatment: 38,
   selfPerTreatment: 45,
   treatmentsPerHour: 2,
   utilization: 75,
@@ -35,7 +37,10 @@ const fmt2 = new Intl.NumberFormat("de-DE", {
 });
 
 export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
-  const selfPct = config.mode === "mix" ? Math.max(0, 100 - config.gkvPct - config.pkvPct) : 0;
+  const selfPct =
+    config.mode === "mix"
+      ? Math.max(0, 100 - config.gkvPct - config.pkvPct - config.bgPct)
+      : 0;
 
   const btnActive = (active: boolean) =>
     active
@@ -98,6 +103,16 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
             unit="%"
             onChange={(pkvPct) => onChange({ ...config, pkvPct })}
           />
+          <StepSlider
+            label="BG-Anteil"
+            value={config.bgPct}
+            min={0}
+            max={100}
+            step={5}
+            unit="%"
+            hint="0 % | 5 % (typisch) | 20 %"
+            onChange={(bgPct) => onChange({ ...config, bgPct })}
+          />
           <p
             className="rounded-md px-3 py-2 text-sm"
             style={{ backgroundColor: C.lightBg, color: C.gray }}
@@ -121,6 +136,16 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
             step={0.5}
             unit="€"
             onChange={(pkvPerTreatment) => onChange({ ...config, pkvPerTreatment })}
+          />
+          <StepSlider
+            label="Ø BG-Vergütung pro Behandlung"
+            value={config.bgPerTreatment}
+            min={0}
+            max={100}
+            step={0.5}
+            unit="€"
+            hint="meist über GKV, unter PKV"
+            onChange={(bgPerTreatment) => onChange({ ...config, bgPerTreatment })}
           />
           <StepSlider
             label="Ø Selbstzahler pro Behandlung"
@@ -182,6 +207,10 @@ function MixSummary({ config }: { config: RevenueConfigMix }) {
         <li>
           PKV ({config.pkvPct}%): {fmt2.format(config.pkvPerTreatment)} €/Beh. × {tph} Beh./Std. ×{" "}
           {u}% = {fmt2.format(parts.pkv)} €/Std.
+        </li>
+        <li>
+          BG ({config.bgPct}%): {fmt2.format(config.bgPerTreatment)} €/Beh. × {tph} Beh./Std. × {u}% ={" "}
+          {fmt2.format(parts.bg)} €/Std.
         </li>
         <li>
           Selbstzahler ({parts.selfPct}%): {fmt2.format(config.selfPerTreatment)} €/Beh. × {tph}{" "}

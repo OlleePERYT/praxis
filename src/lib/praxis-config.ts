@@ -143,8 +143,13 @@ export function normalizePraxisConfig(rawConfig: unknown): PraxisConfig {
       mode: "mix",
       gkvPct: asNumber(revenueNode?.gkvPct ?? source.gkvPct, 70),
       pkvPct: asNumber(revenueNode?.pkvPct ?? source.pkvPct, 30),
+      bgPct: asNumber(revenueNode?.bgPct ?? source.bgPct, 0),
       gkvPerTreatment: asNumber(revenueNode?.gkvPerTreatment ?? source.gkvPerTreatment, 35),
       pkvPerTreatment: asNumber(revenueNode?.pkvPerTreatment ?? source.pkvPerTreatment, 49),
+      bgPerTreatment: asNumber(
+        revenueNode?.bgPerTreatment ?? source.bgPerTreatment,
+        38,
+      ),
       selfPerTreatment: asNumber(
         revenueNode?.selfPerTreatment ?? source.selfPerTreatment,
         45,
@@ -167,6 +172,7 @@ export function normalizePraxisConfig(rawConfig: unknown): PraxisConfig {
     revenue,
     mieteMonat: asNumber(source.mieteMonat, 1200),
     untermiete: asNumber(source.untermiete, 0),
+    handelswareJahr: asNumber(source.handelswareJahr, 0),
     sachkosten: normalizeSachkosten(source.sachkosten),
     refRevenue: asNumber(source.refRevenue, 0),
     refCosts: asNumber(source.refCosts, 0),

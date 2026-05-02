@@ -43,8 +43,11 @@ export interface RevenueConfigMix {
   mode: "mix";
   gkvPct: number;
   pkvPct: number;
+  /** Bundeseinheitlicher GKV (BG) – Anteil neben GKV/PKV/Selbstzahler. */
+  bgPct: number;
   gkvPerTreatment: number;
   pkvPerTreatment: number;
+  bgPerTreatment: number;
   selfPerTreatment: number;
   treatmentsPerHour: number;
   utilization: number;
@@ -56,6 +59,8 @@ export interface PraxisConfig {
   mieteMonat: number;
   untermiete: number;
   sachkosten: SachkostenConfig;
+  /** Rohertrag Handelsware (Jahr), z. B. Verkauf abzgl. Wareneinkauf. */
+  handelswareJahr: number;
   refRevenue: number;
   refCosts: number;
   refSurplus: number;
@@ -78,8 +83,10 @@ export interface PraxisResult {
   /** Summe Weiterbildungskosten aller MA (Sachkosten). */
   trainingCostTotal: number;
   untermieteJahr: number;
+  /** Rohertrag Handelsware (Jahr). */
+  handelswareJahr: number;
   totalSach: number;
-  /** Jahresumsatz (Therapie + Untermiete); identisch zu totalIncome */
+  /** Jahresumsatz (Therapie + Untermiete + Handelsware); identisch zu totalIncome */
   revenue: number;
   totalIncome: number;
   revenueTherapy: number;
@@ -100,10 +107,14 @@ export function getEffectiveRevPerHour(
   if (revenue.mode === "direct") {
     return revenue.revPerHour;
   }
-  const selfPct = Math.max(0, 100 - revenue.gkvPct - revenue.pkvPct);
+  const selfPct = Math.max(
+    0,
+    100 - revenue.gkvPct - revenue.pkvPct - revenue.bgPct,
+  );
   const avgPerTreatment =
     (revenue.gkvPct * revenue.gkvPerTreatment +
       revenue.pkvPct * revenue.pkvPerTreatment +
+      revenue.bgPct * revenue.bgPerTreatment +
       selfPct * revenue.selfPerTreatment) /
     100;
   return (
@@ -131,18 +142,24 @@ export function mixChannelEuroPerHour(config: RevenueConfigMix): {
   selfPct: number;
   gkv: number;
   pkv: number;
+  bg: number;
   self: number;
 } {
-  const selfPct = Math.max(0, 100 - config.gkvPct - config.pkvPct);
+  const selfPct = Math.max(
+    0,
+    100 - config.gkvPct - config.pkvPct - config.bgPct,
+  );
   const u = config.utilization / 100;
   const tph = config.treatmentsPerHour;
   const gkv =
     (config.gkvPct / 100) * config.gkvPerTreatment * tph * u;
   const pkv =
     (config.pkvPct / 100) * config.pkvPerTreatment * tph * u;
+  const bg =
+    (config.bgPct / 100) * config.bgPerTreatment * tph * u;
   const self =
     (selfPct / 100) * config.selfPerTreatment * tph * u;
-  return { effective: gkv + pkv + self, selfPct, gkv, pkv, self };
+  return { effective: gkv + pkv + bg + self, selfPct, gkv, pkv, bg, self };
 }
 
 export function calculatePraxis(config: PraxisConfig): PraxisResult {
@@ -170,7 +187,8 @@ export function calculatePraxis(config: PraxisConfig): PraxisResult {
   );
   const revenueTherapy = totalEffHours * effectiveRevPerHour;
   const untermieteJahr = config.untermiete * 12;
-  const revenue = revenueTherapy + untermieteJahr;
+  const handelswareJahr = config.handelswareJahr;
+  const revenue = revenueTherapy + untermieteJahr + handelswareJahr;
   const totalIncome = revenue;
 
   const personalCost = employeeDetails.reduce(
@@ -209,6 +227,7 @@ export function calculatePraxis(config: PraxisConfig): PraxisResult {
     sachkostenJahr,
     trainingCostTotal,
     untermieteJahr,
+    handelswareJahr,
     totalSach,
     revenue,
     totalIncome,

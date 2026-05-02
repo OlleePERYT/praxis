@@ -36,6 +36,9 @@ export function ProfitLoss({ result, employees }: ProfitLossProps) {
         {result.untermieteJahr > 0 ? (
           <Row label="Untermiete" value={result.untermieteJahr} />
         ) : null}
+        {result.handelswareJahr > 0 ? (
+          <Row label="Handelsware (Rohertrag)" value={result.handelswareJahr} />
+        ) : null}
         <Row label="Σ Umsatz" value={result.totalIncome} bold />
       </div>
 

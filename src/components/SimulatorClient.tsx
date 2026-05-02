@@ -123,6 +123,42 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
               Erlöse
             </h2>
             <RevenuePanel config={config.revenue} onChange={updateRevenue} />
+            <section
+              className="rounded-xl border p-4 shadow-sm"
+              style={{ backgroundColor: C.white, borderColor: C.lightBg2 }}
+            >
+              <h3
+                className="mb-3 text-base font-semibold"
+                style={{ color: C.primary }}
+              >
+                Sonstige Erträge
+              </h3>
+              <div className="space-y-3">
+                <StepSlider
+                  label="Untermiete pro Monat"
+                  value={config.untermiete}
+                  min={0}
+                  max={2000}
+                  step={50}
+                  unit="€"
+                  onChange={(untermiete) =>
+                    setConfig((prev) => ({ ...prev, untermiete }))
+                  }
+                />
+                <StepSlider
+                  label="Rohertrag Handelsware / Jahr"
+                  value={config.handelswareJahr}
+                  min={0}
+                  max={20000}
+                  step={100}
+                  unit="€"
+                  hint="Verkaufserlöse minus Wareneinkauf. Typische Marge 30–50 %."
+                  onChange={(handelswareJahr) =>
+                    setConfig((prev) => ({ ...prev, handelswareJahr }))
+                  }
+                />
+              </div>
+            </section>
             <h2 className="text-xl font-semibold" style={{ color: C.primary }}>
               Kosten
             </h2>
@@ -142,15 +178,6 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
                 onChange={(sachkosten) =>
                   setConfig((prev) => ({ ...prev, sachkosten }))
                 }
-              />
-              <StepSlider
-                label="Untermiete pro Monat"
-                value={config.untermiete}
-                min={0}
-                max={2000}
-                step={50}
-                unit="€"
-                onChange={(untermiete) => setConfig((prev) => ({ ...prev, untermiete }))}
               />
               <StepSlider
                 label="GF-Gehalt pro Monat (nur GmbH)"

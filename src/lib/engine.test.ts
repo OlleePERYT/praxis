@@ -1,8 +1,10 @@
 import {
   calculatePraxis,
+  getEffectiveRevPerHour,
   getSachkostenJahr,
   SACH_OHNE_MIETE,
   type PraxisConfig,
+  type RevenueConfigMix,
 } from "./engine";
 import {
   normalizePraxisConfig,
@@ -21,6 +23,7 @@ const refDefaults = {
   refLabel: "Bisher",
   gfGehaltMonat: 0,
   inhaberEntnahmeMonat: 0,
+  handelswareJahr: 0,
 };
 
 // Test 1: Direct-Modus, 1 Mitarbeiter, positiver Ueberschuss.
@@ -69,8 +72,10 @@ const refDefaults = {
       mode: "mix",
       gkvPct: 70,
       pkvPct: 30,
+      bgPct: 0,
       gkvPerTreatment: 30,
       pkvPerTreatment: 50,
+      bgPerTreatment: 38,
       selfPerTreatment: 80,
       treatmentsPerHour: 1,
       utilization: 100,
@@ -83,7 +88,8 @@ const refDefaults = {
 
   const result = calculatePraxis(config);
 
-  const expectedAvgPerTreatment = (70 * 30 + 30 * 50 + 0 * 80) / 100;
+  const expectedAvgPerTreatment =
+    (70 * 30 + 30 * 50 + 0 * 38 + 0 * 80) / 100;
   const totalEffHours = 10 * 52;
   const expectedRevenue = totalEffHours * expectedAvgPerTreatment;
 
@@ -597,6 +603,124 @@ const refDefaults = {
   console.assert(
     nEmpty.sachkosten.mode === "direct" && nEmpty.sachkosten.value === SACH_OHNE_MIETE,
     "Test 13e: default direct SACH_OHNE_MIETE.",
+  );
+  console.assert(nEmpty.handelswareJahr === 0, "Test 13f: handelswareJahr default 0.");
+}
+
+// Test 14: Mix mit bgPct=0 → gleiches effektives €/h wie ohne BG-Term (Regression).
+{
+  const mix: RevenueConfigMix = {
+    mode: "mix",
+    gkvPct: 70,
+    pkvPct: 30,
+    bgPct: 0,
+    bgPerTreatment: 38,
+    gkvPerTreatment: 30,
+    pkvPerTreatment: 50,
+    selfPerTreatment: 80,
+    treatmentsPerHour: 1,
+    utilization: 100,
+  };
+  const selfPctLegacy = Math.max(0, 100 - mix.gkvPct - mix.pkvPct);
+  const avgLegacy =
+    (mix.gkvPct * mix.gkvPerTreatment +
+      mix.pkvPct * mix.pkvPerTreatment +
+      selfPctLegacy * mix.selfPerTreatment) /
+    100;
+  const eff = getEffectiveRevPerHour(mix);
+  console.assert(
+    approxEqual(eff, avgLegacy * mix.treatmentsPerHour * (mix.utilization / 100)),
+    "Test 14: bg=0 entspricht historischer Mix-Berechnung.",
+  );
+}
+
+// Test 15: Mix mit BG-Anteil – selfPct und Umsatz.
+{
+  const config: PraxisConfig = {
+    employees: [
+      {
+        name: "Therapeutin 1",
+        hours: 10,
+        rate: 20,
+        vacation: 0,
+        sick: 0,
+        training: 0,
+        trainingCost: 0,
+      },
+    ],
+    revenue: {
+      mode: "mix",
+      gkvPct: 60,
+      pkvPct: 20,
+      bgPct: 10,
+      gkvPerTreatment: 35,
+      pkvPerTreatment: 49,
+      bgPerTreatment: 38,
+      selfPerTreatment: 45,
+      treatmentsPerHour: 1,
+      utilization: 100,
+    },
+    mieteMonat: 0,
+    untermiete: 0,
+    sachkosten: { mode: "direct", value: 0 },
+    ...refDefaults,
+  };
+
+  const selfPct = Math.max(0, 100 - 60 - 20 - 10);
+  console.assert(selfPct === 10, "Test 15a: selfPct 10.");
+
+  const expectedAvg =
+    (60 * 35 + 20 * 49 + 10 * 38 + 10 * 45) / 100;
+  const totalEffHours = 10 * 52;
+  const expectedRevenueTherapy = totalEffHours * expectedAvg;
+  const result = calculatePraxis(config);
+  console.assert(
+    approxEqual(result.revenueTherapy, expectedRevenueTherapy),
+    "Test 15b: Therapie-Umsatz mit BG-Anteil.",
+  );
+}
+
+// Test 16: handelswareJahr – Zusatzumsatz ohne Therapie-Erlös; PK-Quote sinkt leicht.
+{
+  const base: PraxisConfig = {
+    employees: [
+      {
+        name: "Therapeutin 1",
+        hours: 10,
+        rate: 20,
+        vacation: 0,
+        sick: 0,
+        training: 0,
+        trainingCost: 0,
+      },
+    ],
+    revenue: { mode: "direct", revPerHour: 50 },
+    mieteMonat: 0,
+    untermiete: 0,
+    sachkosten: { mode: "direct", value: 0 },
+    handelswareJahr: 0,
+    ...refDefaults,
+  };
+  const withHw = { ...base, handelswareJahr: 1500 };
+  const r0 = calculatePraxis(base);
+  const r1 = calculatePraxis(withHw);
+
+  console.assert(r1.handelswareJahr === 1500, "Test 16a: handelswareJahr durchgereicht.");
+  console.assert(
+    approxEqual(r1.revenue, r0.revenue + 1500),
+    "Test 16b: Gesamtumsatz +1500.",
+  );
+  console.assert(
+    approxEqual(r1.revenueTherapy, r0.revenueTherapy),
+    "Test 16c: Therapie-Umsatz unveraendert.",
+  );
+  console.assert(
+    approxEqual(r1.ueberschuss, r0.ueberschuss + 1500),
+    "Test 16d: Ueberschuss +1500.",
+  );
+  console.assert(
+    r1.personalCostRatio < r0.personalCostRatio,
+    "Test 16e: PK-Quote sinkt (hoeherer Nenner).",
   );
 }
 
