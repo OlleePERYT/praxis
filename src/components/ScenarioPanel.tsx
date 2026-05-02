@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PraxisConfig } from "@/lib/engine";
+import { C } from "@/lib/colors";
+import type { PraxisConfig } from "@/lib/engine";
 
 type ScenarioDto = {
   id: number;
@@ -12,7 +13,7 @@ type ScenarioDto = {
 
 type ScenarioPanelProps = {
   currentConfig: PraxisConfig;
-  onLoad: (config: PraxisConfig) => void;
+  onLoad: (config: unknown) => void;
 };
 
 function formatDate(value: string): string {
@@ -118,8 +119,13 @@ export function ScenarioPanel({ currentConfig, onLoad }: ScenarioPanelProps) {
   };
 
   return (
-    <section className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-      <h2 className="text-xl font-semibold text-zinc-900">Szenarien</h2>
+    <section
+      className="space-y-4 rounded-xl border p-4 shadow-sm"
+      style={{ backgroundColor: C.white, borderColor: C.lightBg2 }}
+    >
+      <h2 className="text-xl font-semibold" style={{ color: C.primary }}>
+        Szenarien
+      </h2>
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
@@ -127,44 +133,71 @@ export function ScenarioPanel({ currentConfig, onLoad }: ScenarioPanelProps) {
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder="Aktuellen Stand speichern als..."
-          className="w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900"
+          className="w-full rounded-md border px-3 py-2"
+          style={{ borderColor: C.lightBg2, color: C.primary }}
         />
         <button
           type="button"
           onClick={() => void handleSave()}
           disabled={maxReached}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-zinc-400"
+          className="rounded-md px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+          style={{ backgroundColor: C.primary }}
         >
           Speichern
         </button>
       </div>
 
-      {maxReached ? <p className="text-sm text-amber-700">Max. 3 Szenarien erreicht</p> : null}
-      {message ? <p className="text-sm text-rose-600">{message}</p> : null}
-      {isLoading ? <p className="text-sm text-zinc-500">Lade Szenarien...</p> : null}
+      {maxReached ? (
+        <p className="text-sm" style={{ color: C.orange }}>
+          Max. 3 Szenarien erreicht
+        </p>
+      ) : null}
+      {message ? (
+        <p className="text-sm" style={{ color: C.red }}>
+          {message}
+        </p>
+      ) : null}
+      {isLoading ? (
+        <p className="text-sm" style={{ color: C.lightGray }}>
+          Lade Szenarien...
+        </p>
+      ) : null}
 
       <div className="space-y-2">
         {scenarios.map((scenario) => (
           <div
             key={scenario.id}
-            className="flex flex-col gap-2 rounded-md border border-zinc-200 p-3 sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between"
+            style={{ borderColor: C.lightBg2 }}
           >
             <div>
-              <p className="font-medium text-zinc-900">{scenario.name}</p>
-              <p className="text-sm text-zinc-500">{formatDate(scenario.created_at)}</p>
+              <p className="font-medium" style={{ color: C.primary }}>
+                {scenario.name}
+              </p>
+              <p className="text-sm" style={{ color: C.lightGray }}>
+                {formatDate(scenario.created_at)}
+              </p>
             </div>
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => onLoad(JSON.parse(scenario.data) as PraxisConfig)}
-                className="rounded-md border border-zinc-300 px-3 py-1 text-sm text-zinc-700 hover:bg-zinc-100"
+                onClick={() => {
+                  try {
+                    onLoad(JSON.parse(scenario.data));
+                  } catch {
+                    setMessage("Szenario-Daten sind ungültig.");
+                  }
+                }}
+                className="rounded-md border px-3 py-1 text-sm"
+                style={{ borderColor: C.lightBg2, color: C.primary }}
               >
                 Laden
               </button>
               <button
                 type="button"
                 onClick={() => void handleDelete(scenario.id)}
-                className="rounded-md border border-rose-300 px-3 py-1 text-sm text-rose-700 hover:bg-rose-50"
+                className="rounded-md border px-3 py-1 text-sm"
+                style={{ borderColor: C.red, color: C.red }}
               >
                 Löschen
               </button>

@@ -32,6 +32,10 @@ export interface PraxisConfig {
   mieteMonat: number;
   untermiete: number;
   sachkosten: number;
+  refRevenue: number;
+  refCosts: number;
+  refSurplus: number;
+  refLabel: string;
 }
 
 export interface PraxisResult {
@@ -39,7 +43,12 @@ export interface PraxisResult {
   personalCost: number;
   mieteJahr: number;
   sachkostenJahr: number;
+  untermieteJahr: number;
+  totalSach: number;
+  /** Jahresumsatz (Therapie + Untermiete); identisch zu totalIncome */
   revenue: number;
+  totalIncome: number;
+  revenueTherapy: number;
   ueberschuss: number;
   personalCostRatio: number;
   employeeDetails: {
@@ -48,6 +57,43 @@ export interface PraxisResult {
     effHours: number;
     cost: number;
   }[];
+}
+
+export function getEffectiveRevPerHour(
+  revenue: RevenueConfigDirect | RevenueConfigMix,
+): number {
+  if (revenue.mode === "direct") {
+    return revenue.revPerHour;
+  }
+  const selfPct = Math.max(0, 100 - revenue.gkvPct - revenue.pkvPct);
+  const avgPerTreatment =
+    (revenue.gkvPct * revenue.gkvPerTreatment +
+      revenue.pkvPct * revenue.pkvPerTreatment +
+      selfPct * revenue.selfPerTreatment) /
+    100;
+  return (
+    avgPerTreatment * revenue.treatmentsPerHour * (revenue.utilization / 100)
+  );
+}
+
+/** Anteil am effektiven Erlös/Stunde je Versicherungskanal (Summe = effektiver €/h). */
+export function mixChannelEuroPerHour(config: RevenueConfigMix): {
+  effective: number;
+  selfPct: number;
+  gkv: number;
+  pkv: number;
+  self: number;
+} {
+  const selfPct = Math.max(0, 100 - config.gkvPct - config.pkvPct);
+  const u = config.utilization / 100;
+  const tph = config.treatmentsPerHour;
+  const gkv =
+    (config.gkvPct / 100) * config.gkvPerTreatment * tph * u;
+  const pkv =
+    (config.pkvPct / 100) * config.pkvPerTreatment * tph * u;
+  const self =
+    (selfPct / 100) * config.selfPerTreatment * tph * u;
+  return { effective: gkv + pkv + self, selfPct, gkv, pkv, self };
 }
 
 export function calculatePraxis(config: PraxisConfig): PraxisResult {
@@ -65,32 +111,25 @@ export function calculatePraxis(config: PraxisConfig): PraxisResult {
     };
   });
 
-  let effectiveRevPerHour = 0;
+  const effectiveRevPerHour = getEffectiveRevPerHour(config.revenue);
 
-  if (config.revenue.mode === "direct") {
-    effectiveRevPerHour = config.revenue.revPerHour;
-  } else {
-    const selfPct = Math.max(0, 100 - config.revenue.gkvPct - config.revenue.pkvPct);
-    const avgPerTreatment =
-      (config.revenue.gkvPct * config.revenue.gkvPerTreatment +
-        config.revenue.pkvPct * config.revenue.pkvPerTreatment +
-        selfPct * config.revenue.selfPerTreatment) /
-      100;
-    effectiveRevPerHour =
-      avgPerTreatment *
-      config.revenue.treatmentsPerHour *
-      (config.revenue.utilization / 100);
-  }
-
-  const totalEffHours = employeeDetails.reduce((sum, employee) => sum + employee.effHours, 0);
+  const totalEffHours = employeeDetails.reduce(
+    (sum, employee) => sum + employee.effHours,
+    0,
+  );
   const revenueTherapy = totalEffHours * effectiveRevPerHour;
-  const revenueUntermiete = config.untermiete * 12;
-  const revenue = revenueTherapy + revenueUntermiete;
+  const untermieteJahr = config.untermiete * 12;
+  const revenue = revenueTherapy + untermieteJahr;
+  const totalIncome = revenue;
 
-  const personalCost = employeeDetails.reduce((sum, employee) => sum + employee.cost, 0);
+  const personalCost = employeeDetails.reduce(
+    (sum, employee) => sum + employee.cost,
+    0,
+  );
   const mieteJahr = config.mieteMonat * 12;
   const sachkostenJahr = config.sachkosten ?? SACH_OHNE_MIETE;
-  const totalCost = personalCost + mieteJahr + sachkostenJahr;
+  const totalSach = sachkostenJahr + mieteJahr - untermieteJahr;
+  const totalCost = personalCost + totalSach;
 
   const ueberschuss = revenue - totalCost;
   const personalCostRatio = revenue === 0 ? 0 : personalCost / revenue;
@@ -100,7 +139,11 @@ export function calculatePraxis(config: PraxisConfig): PraxisResult {
     personalCost,
     mieteJahr,
     sachkostenJahr,
+    untermieteJahr,
+    totalSach,
     revenue,
+    totalIncome,
+    revenueTherapy,
     ueberschuss,
     personalCostRatio,
     employeeDetails,

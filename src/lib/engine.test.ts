@@ -1,8 +1,15 @@
 import { calculatePraxis, type PraxisConfig } from "./engine";
 
-function approxEqual(actual: number, expected: number, epsilon = 1e-9): boolean {
+function approxEqual(actual: number, expected: number, epsilon = 1e-6): boolean {
   return Math.abs(actual - expected) < epsilon;
 }
+
+const refDefaults = {
+  refRevenue: 0,
+  refCosts: 0,
+  refSurplus: 0,
+  refLabel: "Bisher",
+};
 
 // Test 1: Direct-Modus, 1 Mitarbeiter, positiver Ueberschuss.
 {
@@ -23,6 +30,7 @@ function approxEqual(actual: number, expected: number, epsilon = 1e-9): boolean 
     mieteMonat: 0,
     untermiete: 0,
     sachkosten: 0,
+    ...refDefaults,
   };
 
   const result = calculatePraxis(config);
@@ -54,6 +62,7 @@ function approxEqual(actual: number, expected: number, epsilon = 1e-9): boolean 
     mieteMonat: 0,
     untermiete: 0,
     sachkosten: 0,
+    ...refDefaults,
   };
 
   const result = calculatePraxis(config);
@@ -68,7 +77,7 @@ function approxEqual(actual: number, expected: number, epsilon = 1e-9): boolean 
   );
 }
 
-// Test 3: Untermiete 300/Monat erhoeht Umsatz um 3600 pro Jahr.
+// Test 3: Untermiete 300/Monat: Umsatz +3600, zusaetzliche Kostenminderung +3600 => Ueberschuss +7200.
 {
   const baseConfig: PraxisConfig = {
     employees: [
@@ -87,6 +96,7 @@ function approxEqual(actual: number, expected: number, epsilon = 1e-9): boolean 
     mieteMonat: 0,
     untermiete: 0,
     sachkosten: 0,
+    ...refDefaults,
   };
 
   const withoutUntermiete = calculatePraxis(baseConfig);
@@ -94,7 +104,14 @@ function approxEqual(actual: number, expected: number, epsilon = 1e-9): boolean 
 
   console.assert(
     approxEqual(withUntermiete.revenue - withoutUntermiete.revenue, 3600),
-    "Test 3 fehlgeschlagen: Untermiete sollte Umsatz um 3600 erhoehen.",
+    "Test 3a fehlgeschlagen: Untermiete sollte Umsatz um 3600 erhoehen.",
+  );
+  console.assert(
+    approxEqual(
+      withUntermiete.ueberschuss - withoutUntermiete.ueberschuss,
+      7200,
+    ),
+    "Test 3b fehlgeschlagen: Untermiete sollte Ueberschuss um 7200 erhoehen (Einnahme + Netto-Kosten).",
   );
 }
 

@@ -1,6 +1,11 @@
 "use client";
 
-import { RevenueConfigDirect, RevenueConfigMix } from "@/lib/engine";
+import { C } from "@/lib/colors";
+import {
+  mixChannelEuroPerHour,
+  type RevenueConfigDirect,
+  type RevenueConfigMix,
+} from "@/lib/engine";
 import { StepSlider } from "./StepSlider";
 
 type RevenuePanelProps = {
@@ -24,31 +29,38 @@ const defaultMix: RevenueConfigMix = {
   utilization: 75,
 };
 
+const fmt2 = new Intl.NumberFormat("de-DE", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
   const selfPct = config.mode === "mix" ? Math.max(0, 100 - config.gkvPct - config.pkvPct) : 0;
 
+  const btnActive = (active: boolean) =>
+    active
+      ? { backgroundColor: C.primary, color: C.white, border: `1px solid ${C.primary}` }
+      : { backgroundColor: C.white, color: C.primary, border: `1px solid ${C.lightBg2}` };
+
   return (
-    <section className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <section
+      className="space-y-4 rounded-xl border p-4 shadow-sm"
+      style={{ backgroundColor: C.white, borderColor: C.lightBg2 }}
+    >
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => onChange(defaultDirect)}
-          className={`rounded-md px-3 py-2 text-sm font-medium ${
-            config.mode === "direct"
-              ? "bg-zinc-900 text-white"
-              : "border border-zinc-300 text-zinc-700 hover:bg-zinc-100"
-          }`}
+          className="rounded-md px-3 py-2 text-sm font-medium"
+          style={btnActive(config.mode === "direct")}
         >
           Direkt
         </button>
         <button
           type="button"
           onClick={() => onChange(defaultMix)}
-          className={`rounded-md px-3 py-2 text-sm font-medium ${
-            config.mode === "mix"
-              ? "bg-zinc-900 text-white"
-              : "border border-zinc-300 text-zinc-700 hover:bg-zinc-100"
-          }`}
+          className="rounded-md px-3 py-2 text-sm font-medium"
+          style={btnActive(config.mode === "mix")}
         >
           Mix
         </button>
@@ -62,6 +74,7 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
           max={300}
           step={5}
           unit="€/h"
+          hint="35 € (nur GKV) | 65 € (Mix) | 85 € (Premium)"
           onChange={(revPerHour) => onChange({ mode: "direct", revPerHour })}
         />
       ) : (
@@ -73,6 +86,7 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
             max={100}
             step={5}
             unit="%"
+            hint="0 % | 60 % (typisch) | 100 %"
             onChange={(gkvPct) => onChange({ ...config, gkvPct })}
           />
           <StepSlider
@@ -84,7 +98,10 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
             unit="%"
             onChange={(pkvPct) => onChange({ ...config, pkvPct })}
           />
-          <p className="rounded-md bg-zinc-100 px-3 py-2 text-sm text-zinc-700">
+          <p
+            className="rounded-md px-3 py-2 text-sm"
+            style={{ backgroundColor: C.lightBg, color: C.gray }}
+          >
             Selbstzahler-Anteil: {selfPct} %
           </p>
           <StepSlider
@@ -129,10 +146,48 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
             max={100}
             step={5}
             unit="%"
+            hint="50 % | 70 % (realistisch) | 95 %"
             onChange={(utilization) => onChange({ ...config, utilization })}
           />
+
+          <MixSummary config={config} />
         </div>
       )}
     </section>
+  );
+}
+
+function MixSummary({ config }: { config: RevenueConfigMix }) {
+  const parts = mixChannelEuroPerHour(config);
+  const u = config.utilization;
+  const tph = config.treatmentsPerHour;
+
+  return (
+    <div
+      className="space-y-2 rounded-lg border p-3 text-sm"
+      style={{ borderColor: C.accent, backgroundColor: C.lightBg }}
+    >
+      <p className="font-semibold" style={{ color: C.primary }}>
+        Erlös-Zusammenfassung (Mix)
+      </p>
+      <p style={{ color: C.gray }}>
+        Effektiver Erlös / Anwesenheitsstunde:{" "}
+        <strong style={{ color: C.primary }}>{fmt2.format(parts.effective)} €/h</strong>
+      </p>
+      <ul className="list-inside list-disc space-y-1" style={{ color: C.gray }}>
+        <li>
+          GKV ({config.gkvPct}%): {fmt2.format(config.gkvPerTreatment)} €/Beh. × {tph} Beh./Std. ×{" "}
+          {u}% = {fmt2.format(parts.gkv)} €/Std.
+        </li>
+        <li>
+          PKV ({config.pkvPct}%): {fmt2.format(config.pkvPerTreatment)} €/Beh. × {tph} Beh./Std. ×{" "}
+          {u}% = {fmt2.format(parts.pkv)} €/Std.
+        </li>
+        <li>
+          Selbstzahler ({parts.selfPct}%): {fmt2.format(config.selfPerTreatment)} €/Beh. × {tph}{" "}
+          Beh./Std. × {u}% = {fmt2.format(parts.self)} €/Std.
+        </li>
+      </ul>
+    </div>
   );
 }
