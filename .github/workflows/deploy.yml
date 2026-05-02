@@ -25,6 +25,6 @@ jobs:
             npm ci
             NODE_ENV=production npm run build
             pm2 restart praxis-kennzahlen || pm2 start npm --name praxis-kennzahlen -- start
-            curl -f http://localhost:3001 || exit 1
+            sleep 5 && curl -f http://localhost:3001 || exit 1
 
       # .env.local wird nicht committed und muss auf dem VPS vorhanden sein.
