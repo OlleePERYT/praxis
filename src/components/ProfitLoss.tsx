@@ -61,11 +61,6 @@ export function ProfitLoss({ result, employees }: ProfitLossProps) {
         </p>
         <Row label="Miete (Jahr)" value={result.mieteJahr} />
         <Row label="Übrige Sachkosten (Jahr)" value={result.sachkostenJahr} />
-        {result.untermieteJahr > 0 ? (
-          <p className="text-xs" style={{ color: C.lightGray }}>
-            Untermiete mindert Netto-Raumkosten um {euro.format(result.untermieteJahr)} € (siehe Gesamtkosten).
-          </p>
-        ) : null}
       </div>
 
       <div className="border-t pt-3" style={{ borderColor: C.lightBg2 }}>

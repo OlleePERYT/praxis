@@ -128,7 +128,7 @@ export function calculatePraxis(config: PraxisConfig): PraxisResult {
   );
   const mieteJahr = config.mieteMonat * 12;
   const sachkostenJahr = config.sachkosten ?? SACH_OHNE_MIETE;
-  const totalSach = sachkostenJahr + mieteJahr - untermieteJahr;
+  const totalSach = sachkostenJahr + mieteJahr;
   const totalCost = personalCost + totalSach;
 
   const ueberschuss = revenue - totalCost;

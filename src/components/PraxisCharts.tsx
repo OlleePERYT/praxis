@@ -34,7 +34,7 @@ export function PraxisCharts({ result }: PraxisChartsProps) {
     });
   });
   costSlices.push({
-    name: "Miete, Sach, Untermiete (netto)",
+    name: "Miete + Sachkosten",
     value: result.totalSach,
   });
   const costData = costSlices.filter((x) => x.value > 0);
@@ -65,7 +65,7 @@ export function PraxisCharts({ result }: PraxisChartsProps) {
           Kostenverteilung
         </h3>
         <p className="mb-2 text-xs" style={{ color: C.lightGray }}>
-          Personal je Mitarbeiter; übrige Position = Miete + Sachkosten − Untermiete (BWA-konform).
+          Personal je Mitarbeiter:in; übrige Position = Miete + Sachkosten.
         </p>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">

@@ -77,7 +77,7 @@ const refDefaults = {
   );
 }
 
-// Test 3: Untermiete 300/Monat: Umsatz +3600, zusaetzliche Kostenminderung +3600 => Ueberschuss +7200.
+// Test 3: Untermiete 300/Monat: Umsatz +3600, Kosten unveraendert => Ueberschuss +3600.
 {
   const baseConfig: PraxisConfig = {
     employees: [
@@ -109,9 +109,9 @@ const refDefaults = {
   console.assert(
     approxEqual(
       withUntermiete.ueberschuss - withoutUntermiete.ueberschuss,
-      7200,
+      3600,
     ),
-    "Test 3b fehlgeschlagen: Untermiete sollte Ueberschuss um 7200 erhoehen (Einnahme + Netto-Kosten).",
+    "Test 3b fehlgeschlagen: Untermiete sollte Ueberschuss um 3600 erhoehen (sonstige Einnahme).",
   );
 }
 
