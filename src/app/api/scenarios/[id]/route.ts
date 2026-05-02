@@ -19,7 +19,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
   const { id } = await context.params;
   const scenarioId = Number(id);
   if (!Number.isInteger(scenarioId) || scenarioId <= 0) {
-    return NextResponse.json({ error: "Ungueltige Szenario-ID." }, { status: 400 });
+    return NextResponse.json({ error: "Ungültige Szenario-ID." }, { status: 400 });
   }
 
   await db

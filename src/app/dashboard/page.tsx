@@ -12,7 +12,7 @@ import { SimulatorClient } from "@/components/SimulatorClient";
 
 const defaultEmployees: Employee[] = [
   {
-    name: "Therapeutin 1",
+    name: "Therapeut:in 1",
     hours: 20,
     rate: 25,
     vacation: 30,
@@ -40,7 +40,7 @@ function normalizeConfig(rawConfig: unknown): PraxisConfig {
       name:
         typeof employee.name === "string" && employee.name.trim().length > 0
           ? employee.name
-          : `Therapeutin ${index + 1}`,
+          : `Therapeut:in ${index + 1}`,
       hours: asNumber(employee.hours, 20),
       rate: asNumber(employee.rate, 25),
       vacation: asNumber(employee.vacation, 30),

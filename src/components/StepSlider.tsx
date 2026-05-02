@@ -62,7 +62,7 @@ export function StepSlider({
           type="button"
           onClick={() => updateValue(value + step)}
           className="h-10 w-10 rounded-md border border-zinc-300 text-lg font-semibold hover:bg-zinc-100"
-          aria-label={`${label} erhoehen`}
+          aria-label={`${label} erhöhen`}
         >
           +
         </button>

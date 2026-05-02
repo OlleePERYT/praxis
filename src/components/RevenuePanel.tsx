@@ -39,7 +39,7 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
               : "border border-zinc-300 text-zinc-700 hover:bg-zinc-100"
           }`}
         >
-          Direct
+          Direkt
         </button>
         <button
           type="button"
@@ -56,7 +56,7 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
 
       {config.mode === "direct" ? (
         <StepSlider
-          label="Erlos pro Stunde"
+          label="Erlös pro Stunde"
           value={config.revPerHour}
           min={0}
           max={300}
@@ -88,7 +88,7 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
             Selbstzahler-Anteil: {selfPct} %
           </p>
           <StepSlider
-            label="Ø GKV-Verguetung pro Behandlung"
+            label="Ø GKV-Vergütung pro Behandlung"
             value={config.gkvPerTreatment}
             min={0}
             max={100}
@@ -97,7 +97,7 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
             onChange={(gkvPerTreatment) => onChange({ ...config, gkvPerTreatment })}
           />
           <StepSlider
-            label="Ø PKV-Verguetung pro Behandlung"
+            label="Ø PKV-Vergütung pro Behandlung"
             value={config.pkvPerTreatment}
             min={0}
             max={100}

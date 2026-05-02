@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as CreateScenarioBody;
   } catch {
-    return NextResponse.json({ error: "Ungueltiger Request-Body." }, { status: 400 });
+    return NextResponse.json({ error: "Ungültiger Request-Body." }, { status: 400 });
   }
 
   const name = body.name?.trim() ?? "";

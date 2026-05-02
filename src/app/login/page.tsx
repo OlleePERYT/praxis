@@ -65,7 +65,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
           {hasError ? (
             <p className="text-sm text-red-600">
-              Login fehlgeschlagen. Bitte E-Mail und Passwort pruefen.
+              Login fehlgeschlagen. Bitte E-Mail und Passwort prüfen.
             </p>
           ) : null}
 

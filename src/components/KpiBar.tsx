@@ -39,7 +39,7 @@ export function KpiBar({ result }: KpiBarProps) {
           <p className="text-lg font-semibold text-zinc-900">{formatEuro(result.personalCost)}</p>
         </div>
         <div>
-          <p className="text-xs text-zinc-500">Ueberschuss</p>
+          <p className="text-xs text-zinc-500">Überschuss</p>
           <p className={`text-lg font-semibold ${ueberschussClass}`}>
             {formatEuro(result.ueberschuss)}
           </p>

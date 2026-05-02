@@ -19,7 +19,7 @@ type SimulatorClientProps = {
 };
 
 const defaultEmployee: Employee = {
-  name: "Therapeutin",
+  name: "Therapeut:in",
   hours: 20,
   rate: 25,
   vacation: 30,
@@ -51,7 +51,7 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
       if (prev.employees.length >= 5) return prev;
       return {
         ...prev,
-        employees: [...prev.employees, { ...defaultEmployee, name: `Therapeutin ${prev.employees.length + 1}` }],
+        employees: [...prev.employees, { ...defaultEmployee, name: `Therapeut:in ${prev.employees.length + 1}` }],
       };
     });
   };
@@ -74,7 +74,7 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
               disabled={config.employees.length >= 5}
               className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-zinc-400"
             >
-              Therapeutin hinzufuegen
+              Therapeut:in hinzufügen
             </button>
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
@@ -91,7 +91,7 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-zinc-900">Erloes</h2>
+          <h2 className="text-xl font-semibold text-zinc-900">Erlöse</h2>
           <RevenuePanel config={config.revenue} onChange={updateRevenue} />
         </section>
 

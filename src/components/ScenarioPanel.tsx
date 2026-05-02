@@ -110,7 +110,7 @@ export function ScenarioPanel({ currentConfig, onLoad }: ScenarioPanelProps) {
 
     if (!response.ok) {
       const error = (await response.json().catch(() => ({}))) as { error?: string };
-      setMessage(error.error ?? "Szenario konnte nicht geloescht werden.");
+      setMessage(error.error ?? "Szenario konnte nicht gelöscht werden.");
       return;
     }
 
@@ -166,7 +166,7 @@ export function ScenarioPanel({ currentConfig, onLoad }: ScenarioPanelProps) {
                 onClick={() => void handleDelete(scenario.id)}
                 className="rounded-md border border-rose-300 px-3 py-1 text-sm text-rose-700 hover:bg-rose-50"
               >
-                Loeschen
+                Löschen
               </button>
             </div>
           </div>
