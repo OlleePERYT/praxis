@@ -138,12 +138,26 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
               />
               <StepSlider
                 label="Sachkosten pro Jahr"
-                value={config.sachkosten}
+                value={
+                  config.sachkosten.mode === "direct"
+                    ? config.sachkosten.value
+                    : config.sachkosten.raumNebenkosten +
+                      config.sachkosten.material +
+                      config.sachkosten.software +
+                      config.sachkosten.versicherungen +
+                      config.sachkosten.marketing +
+                      config.sachkosten.sonstiges
+                }
                 min={0}
                 max={80000}
                 step={1000}
                 unit="€"
-                onChange={(sachkosten) => setConfig((prev) => ({ ...prev, sachkosten }))}
+                onChange={(value) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    sachkosten: { mode: "direct", value },
+                  }))
+                }
               />
               <StepSlider
                 label="Untermiete pro Monat"

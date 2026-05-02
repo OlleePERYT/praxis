@@ -23,7 +23,7 @@ const demoConfig = {
   revPerHour: 75,
   mieteMonat: 1200,
   untermiete: 0,
-  sachkosten: 24020,
+  sachkosten: { mode: "direct", value: 24020 },
 };
 
 async function seed() {

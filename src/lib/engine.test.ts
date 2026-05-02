@@ -1,4 +1,14 @@
-import { calculatePraxis, type PraxisConfig } from "./engine";
+import {
+  calculatePraxis,
+  getSachkostenJahr,
+  SACH_OHNE_MIETE,
+  type PraxisConfig,
+} from "./engine";
+import {
+  normalizePraxisConfig,
+  sachkostenDetailToDirect,
+  sachkostenDirectToDetail,
+} from "./praxis-config";
 
 function approxEqual(actual: number, expected: number, epsilon = 1e-6): boolean {
   return Math.abs(actual - expected) < epsilon;
@@ -33,7 +43,7 @@ const refDefaults = {
     },
     mieteMonat: 0,
     untermiete: 0,
-    sachkosten: 0,
+    sachkosten: { mode: "direct", value: 0 },
     ...refDefaults,
   };
 
@@ -67,7 +77,7 @@ const refDefaults = {
     },
     mieteMonat: 0,
     untermiete: 0,
-    sachkosten: 0,
+    sachkosten: { mode: "direct", value: 0 },
     ...refDefaults,
   };
 
@@ -103,7 +113,7 @@ const refDefaults = {
     },
     mieteMonat: 0,
     untermiete: 0,
-    sachkosten: 0,
+    sachkosten: { mode: "direct", value: 0 },
     ...refDefaults,
   };
 
@@ -143,7 +153,7 @@ const refDefaults = {
     },
     mieteMonat: 0,
     untermiete: 0,
-    sachkosten: 0,
+    sachkosten: { mode: "direct", value: 0 },
     gfGehaltMonat: 0,
     inhaberEntnahmeMonat: 0,
     ...refDefaults,
@@ -217,7 +227,7 @@ const refDefaults = {
     },
     mieteMonat: 0,
     untermiete: 0,
-    sachkosten: 0,
+    sachkosten: { mode: "direct", value: 0 },
     gfGehaltMonat: 0,
     inhaberEntnahmeMonat: 0,
     ...refDefaults,
@@ -276,7 +286,7 @@ const refDefaults = {
     },
     mieteMonat: 0,
     untermiete: 0,
-    sachkosten: 0,
+    sachkosten: { mode: "direct", value: 0 },
     gfGehaltMonat: 0,
     inhaberEntnahmeMonat: 0,
     ...refDefaults,
@@ -328,7 +338,7 @@ const refDefaults = {
     },
     mieteMonat: 0,
     untermiete: 0,
-    sachkosten: 0,
+    sachkosten: { mode: "direct", value: 0 },
     gfGehaltMonat: 0,
     inhaberEntnahmeMonat: 0,
     ...refDefaults,
@@ -372,7 +382,7 @@ const refDefaults = {
     },
     mieteMonat: 0,
     untermiete: 0,
-    sachkosten: 0,
+    sachkosten: { mode: "direct", value: 0 },
     ...refDefaults,
   };
 
@@ -425,7 +435,7 @@ const refDefaults = {
     },
     mieteMonat: 0,
     untermiete: 0,
-    sachkosten: 0,
+    sachkosten: { mode: "direct", value: 0 },
     ...refDefaults,
   };
 
@@ -451,6 +461,142 @@ const refDefaults = {
   console.assert(
     approxEqual(withCost.ueberschuss, baseline.ueberschuss - 2000),
     "Test 9e: ueberschuss -2000.",
+  );
+}
+
+// Test 10: Sachkosten Direct value=24020 → sachkostenJahr/totalSach wie früher skalar 24020.
+{
+  const emp = {
+    name: "Therapeutin 1",
+    hours: 10,
+    rate: 20,
+    vacation: 0,
+    sick: 0,
+    training: 0,
+    trainingCost: 0,
+  };
+  const config: PraxisConfig = {
+    employees: [emp],
+    revenue: { mode: "direct", revPerHour: 50 },
+    mieteMonat: 0,
+    untermiete: 0,
+    sachkosten: { mode: "direct", value: 24020 },
+    ...refDefaults,
+  };
+  const r = calculatePraxis(config);
+  const pk = 10 * 20 * 52 * 1.21;
+  const rev = 10 * 52 * 50;
+  console.assert(r.sachkostenJahr === 24020, "Test 10a: sachkostenJahr 24020.");
+  console.assert(r.totalSach === 24020, "Test 10b: totalSach nur Sach (ohne Miete/Fortbildung).");
+  console.assert(
+    approxEqual(r.ueberschuss, rev - pk - 24020),
+    "Test 10c: ueberschuss konsistent mit Direct-24020.",
+  );
+}
+
+// Test 11: Detail-Defaults Σ=24000 → +24000 totalSach ggü. Sach=0; PK unverändert.
+{
+  const emp = {
+    name: "Therapeutin 1",
+    hours: 10,
+    rate: 20,
+    vacation: 0,
+    sick: 0,
+    training: 0,
+    trainingCost: 0,
+  };
+  const detailSach = {
+    mode: "detail" as const,
+    raumNebenkosten: 4000,
+    material: 3000,
+    software: 2500,
+    versicherungen: 1500,
+    marketing: 3500,
+    sonstiges: 9500,
+  };
+  const base: PraxisConfig = {
+    employees: [emp],
+    revenue: { mode: "direct", revPerHour: 50 },
+    mieteMonat: 0,
+    untermiete: 0,
+    sachkosten: { mode: "direct", value: 0 },
+    ...refDefaults,
+  };
+  const withDetail: PraxisConfig = { ...base, sachkosten: detailSach };
+  const r0 = calculatePraxis(base);
+  const r1 = calculatePraxis(withDetail);
+  console.assert(r1.sachkostenJahr === 24000, "Test 11a: Detail-Summe 24000.");
+  console.assert(
+    approxEqual(r1.totalSach, r0.totalSach + 24000),
+    "Test 11b: totalSach +24000.",
+  );
+  console.assert(
+    approxEqual(r1.personalCost, r0.personalCost),
+    "Test 11c: Personalkosten unveraendert.",
+  );
+}
+
+// Test 12: getSachkostenJahr + Mode-Wechsel-Helper.
+{
+  console.assert(
+    getSachkostenJahr({ mode: "direct", value: 30000 }) === 30000,
+    "Test 12a: getSachkostenJahr direct.",
+  );
+  const detailDefaults = {
+    mode: "detail" as const,
+    raumNebenkosten: 4000,
+    material: 3000,
+    software: 2500,
+    versicherungen: 1500,
+    marketing: 3500,
+    sonstiges: 9500,
+  };
+  console.assert(
+    getSachkostenJahr(detailDefaults) === 24000,
+    "Test 12b: getSachkostenJahr detail.",
+  );
+  const toDirect = sachkostenDetailToDirect(detailDefaults);
+  console.assert(toDirect.value === 24000, "Test 12c: sachkostenDetailToDirect.");
+  const fromDirect = sachkostenDirectToDetail({ mode: "direct", value: 24000 });
+  const sumDetail =
+    fromDirect.raumNebenkosten +
+    fromDirect.material +
+    fromDirect.software +
+    fromDirect.versicherungen +
+    fromDirect.marketing +
+    fromDirect.sonstiges;
+  console.assert(
+    Math.abs(sumDetail - 24000) <= 5,
+    "Test 12d: DirectToDetail Summe ≈ 24000 (Rundung).",
+  );
+}
+
+// Test 13: normalizePraxisConfig Migration Sachkosten.
+{
+  const nScalar = normalizePraxisConfig({ sachkosten: 24020 });
+  console.assert(
+    nScalar.sachkosten.mode === "direct" && nScalar.sachkosten.value === 24020,
+    "Test 13a: skalar → direct 24020.",
+  );
+  const detailIn = {
+    mode: "detail" as const,
+    raumNebenkosten: 4000,
+    material: 3000,
+    software: 2500,
+    versicherungen: 1500,
+    marketing: 3500,
+    sonstiges: 9500,
+  };
+  const nDetail = normalizePraxisConfig({ sachkosten: detailIn });
+  console.assert(nDetail.sachkosten.mode === "detail", "Test 13b: detail mode.");
+  if (nDetail.sachkosten.mode === "detail") {
+    console.assert(nDetail.sachkosten.raumNebenkosten === 4000, "Test 13c: raum.");
+    console.assert(nDetail.sachkosten.sonstiges === 9500, "Test 13d: sonstiges.");
+  }
+  const nEmpty = normalizePraxisConfig({});
+  console.assert(
+    nEmpty.sachkosten.mode === "direct" && nEmpty.sachkosten.value === SACH_OHNE_MIETE,
+    "Test 13e: default direct SACH_OHNE_MIETE.",
   );
 }
 

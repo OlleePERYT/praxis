@@ -1,14 +1,27 @@
-import type {
-  Employee,
-  PraxisConfig,
-  RevenueConfigDirect,
-  RevenueConfigMix,
+import {
+  SACH_OHNE_MIETE,
+  type Employee,
+  type PraxisConfig,
+  type RevenueConfigDirect,
+  type RevenueConfigMix,
+  type SachkostenConfig,
+  type SachkostenConfigDetail,
+  type SachkostenConfigDirect,
 } from "@/lib/engine";
 
 const defaultRevenue: RevenueConfigDirect = {
   mode: "direct",
   revPerHour: 75,
 };
+
+const DEFAULT_SACHKOSTEN_DETAIL = {
+  raumNebenkosten: 4000,
+  material: 3000,
+  software: 2500,
+  versicherungen: 1500,
+  marketing: 3500,
+  sonstiges: 9500,
+} as const;
 
 export function defaultEmployee(index: number): Employee {
   return {
@@ -24,6 +37,71 @@ export function defaultEmployee(index: number): Employee {
 
 function asNumber(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function normalizeSachkosten(raw: unknown): SachkostenConfig {
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    return { mode: "direct", value: raw };
+  }
+
+  if (typeof raw === "object" && raw !== null) {
+    const r = raw as Record<string, unknown>;
+    if (r.mode === "detail") {
+      return {
+        mode: "detail",
+        raumNebenkosten: asNumber(
+          r.raumNebenkosten,
+          DEFAULT_SACHKOSTEN_DETAIL.raumNebenkosten,
+        ),
+        material: asNumber(r.material, DEFAULT_SACHKOSTEN_DETAIL.material),
+        software: asNumber(r.software, DEFAULT_SACHKOSTEN_DETAIL.software),
+        versicherungen: asNumber(
+          r.versicherungen,
+          DEFAULT_SACHKOSTEN_DETAIL.versicherungen,
+        ),
+        marketing: asNumber(r.marketing, DEFAULT_SACHKOSTEN_DETAIL.marketing),
+        sonstiges: asNumber(r.sonstiges, DEFAULT_SACHKOSTEN_DETAIL.sonstiges),
+      };
+    }
+    if (r.mode === "direct") {
+      return { mode: "direct", value: asNumber(r.value, SACH_OHNE_MIETE) };
+    }
+  }
+
+  return { mode: "direct", value: SACH_OHNE_MIETE };
+}
+
+export function sachkostenDirectToDetail(
+  config: SachkostenConfigDirect,
+): SachkostenConfigDetail {
+  const total = config.value;
+  const baseTotal = 24000;
+  const ratio = (defaultValue: number) =>
+    Math.round((defaultValue / baseTotal) * total);
+  return {
+    mode: "detail",
+    raumNebenkosten: ratio(DEFAULT_SACHKOSTEN_DETAIL.raumNebenkosten),
+    material: ratio(DEFAULT_SACHKOSTEN_DETAIL.material),
+    software: ratio(DEFAULT_SACHKOSTEN_DETAIL.software),
+    versicherungen: ratio(DEFAULT_SACHKOSTEN_DETAIL.versicherungen),
+    marketing: ratio(DEFAULT_SACHKOSTEN_DETAIL.marketing),
+    sonstiges: ratio(DEFAULT_SACHKOSTEN_DETAIL.sonstiges),
+  };
+}
+
+export function sachkostenDetailToDirect(
+  config: SachkostenConfigDetail,
+): SachkostenConfigDirect {
+  return {
+    mode: "direct",
+    value:
+      config.raumNebenkosten +
+      config.material +
+      config.software +
+      config.versicherungen +
+      config.marketing +
+      config.sonstiges,
+  };
 }
 
 export function normalizePraxisConfig(rawConfig: unknown): PraxisConfig {
@@ -89,7 +167,7 @@ export function normalizePraxisConfig(rawConfig: unknown): PraxisConfig {
     revenue,
     mieteMonat: asNumber(source.mieteMonat, 1200),
     untermiete: asNumber(source.untermiete, 0),
-    sachkosten: asNumber(source.sachkosten, 24020),
+    sachkosten: normalizeSachkosten(source.sachkosten),
     refRevenue: asNumber(source.refRevenue, 0),
     refCosts: asNumber(source.refCosts, 0),
     refSurplus: asNumber(source.refSurplus, 0),

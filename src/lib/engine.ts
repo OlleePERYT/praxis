@@ -1,6 +1,7 @@
 const AG = 1.21;
 const WEEKS = 52;
-const SACH_OHNE_MIETE = 24020;
+/** Jahresfixkosten ohne Miete (Default Direct-Modus); Wert unverändert lassen. */
+export const SACH_OHNE_MIETE = 24020;
 
 export interface Employee {
   name: string;
@@ -13,6 +14,25 @@ export interface Employee {
   /** Weiterbildungskosten pro Jahr (Sachkosten SKR03/04, nicht Personalkosten). */
   trainingCost: number;
 }
+
+export interface SachkostenConfigDirect {
+  mode: "direct";
+  value: number;
+}
+
+export interface SachkostenConfigDetail {
+  mode: "detail";
+  raumNebenkosten: number;
+  material: number;
+  software: number;
+  versicherungen: number;
+  marketing: number;
+  sonstiges: number;
+}
+
+export type SachkostenConfig =
+  | SachkostenConfigDirect
+  | SachkostenConfigDetail;
 
 export interface RevenueConfigDirect {
   mode: "direct";
@@ -35,7 +55,7 @@ export interface PraxisConfig {
   revenue: RevenueConfigDirect | RevenueConfigMix;
   mieteMonat: number;
   untermiete: number;
-  sachkosten: number;
+  sachkosten: SachkostenConfig;
   refRevenue: number;
   refCosts: number;
   refSurplus: number;
@@ -88,6 +108,20 @@ export function getEffectiveRevPerHour(
     100;
   return (
     avgPerTreatment * revenue.treatmentsPerHour * (revenue.utilization / 100)
+  );
+}
+
+export function getSachkostenJahr(config: SachkostenConfig): number {
+  if (config.mode === "direct") {
+    return config.value;
+  }
+  return (
+    config.raumNebenkosten +
+    config.material +
+    config.software +
+    config.versicherungen +
+    config.marketing +
+    config.sonstiges
   );
 }
 
@@ -153,7 +187,7 @@ export function calculatePraxis(config: PraxisConfig): PraxisResult {
   );
 
   const mieteJahr = config.mieteMonat * 12;
-  const sachkostenJahr = config.sachkosten ?? SACH_OHNE_MIETE;
+  const sachkostenJahr = getSachkostenJahr(config.sachkosten);
   const totalSach = sachkostenJahr + mieteJahr + trainingCostTotal;
   const totalCost = personalCostMitGf + totalSach;
 
