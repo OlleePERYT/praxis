@@ -1,7 +1,11 @@
 "use client";
 
 import { C } from "@/lib/colors";
-import type { PraxisResult } from "@/lib/engine";
+import type {
+  PraxisResult,
+  RevenueConfigDirect,
+  RevenueConfigMix,
+} from "@/lib/engine";
 
 const pct1 = new Intl.NumberFormat("de-DE", {
   minimumFractionDigits: 1,
@@ -16,6 +20,7 @@ const euro0 = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
 type MetricsCardProps = {
   result: PraxisResult;
   sumWeeklyHours: number;
+  revenueConfig: RevenueConfigDirect | RevenueConfigMix;
 };
 
 type TileProps = {
@@ -23,9 +28,10 @@ type TileProps = {
   value: string;
   unit?: string;
   valueColor?: string;
+  sub?: string;
 };
 
-function Tile({ label, value, unit, valueColor }: TileProps) {
+function Tile({ label, value, unit, valueColor, sub }: TileProps) {
   return (
     <div
       className="rounded-lg border p-3"
@@ -47,11 +53,20 @@ function Tile({ label, value, unit, valueColor }: TileProps) {
           </span>
         ) : null}
       </p>
+      {sub ? (
+        <p className="mt-1 text-xs" style={{ color: C.lightGray }}>
+          {sub}
+        </p>
+      ) : null}
     </div>
   );
 }
 
-export function MetricsCard({ result, sumWeeklyHours }: MetricsCardProps) {
+export function MetricsCard({
+  result,
+  sumWeeklyHours,
+  revenueConfig,
+}: MetricsCardProps) {
   const totalEff = result.employeeDetails.reduce((s, e) => s + e.effHours, 0);
   const revPerHour = totalEff > 0 ? result.revenueTherapy / totalEff : 0;
   const pkQuote = result.personalCostRatio * 100;
@@ -59,6 +74,14 @@ export function MetricsCard({ result, sumWeeklyHours }: MetricsCardProps) {
     result.revenue === 0 ? 0 : (result.mieteJahr / result.revenue) * 100;
   const surplusQuote =
     result.revenue === 0 ? 0 : (result.ueberschuss / result.revenue) * 100;
+
+  const gkvRisk =
+    revenueConfig.mode === "mix"
+      ? {
+          euro: result.revenueTherapy * (revenueConfig.gkvPct / 100),
+          pct: revenueConfig.gkvPct,
+        }
+      : null;
 
   return (
     <section
@@ -101,6 +124,17 @@ export function MetricsCard({ result, sumWeeklyHours }: MetricsCardProps) {
           unit="%"
           valueColor={surplusQuote >= 0 ? C.green : C.red}
         />
+        {gkvRisk !== null ? (
+          <Tile
+            label="GKV-abhängiger Umsatz"
+            value={euro0.format(gkvRisk.euro)}
+            unit="€"
+            sub={`${pct1.format(gkvRisk.pct)} % des Therapie-Umsatzes`}
+            valueColor={
+              gkvRisk.pct > 70 ? C.red : gkvRisk.pct > 50 ? C.orange : C.primary
+            }
+          />
+        ) : null}
       </div>
     </section>
   );

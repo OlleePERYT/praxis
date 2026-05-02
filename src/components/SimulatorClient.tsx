@@ -148,7 +148,11 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
 
         <ProfitLoss result={result} employees={config.employees} />
 
-        <MetricsCard result={result} sumWeeklyHours={sumWeeklyHours} />
+        <MetricsCard
+          result={result}
+          sumWeeklyHours={sumWeeklyHours}
+          revenueConfig={config.revenue}
+        />
 
         <PraxisCharts result={result} />
 
