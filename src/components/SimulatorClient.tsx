@@ -387,12 +387,11 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
               type="button"
               onClick={addEmployee}
               disabled={config.employees.length >= SOFT_LIMIT}
-              className="w-full rounded-xl border-2 border-dashed py-4 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ borderColor: C.lightBg2, color: C.primary }}
+              className="w-full cursor-pointer rounded-2xl border border-dashed border-brand-primary/30 bg-brand-bg/30 p-6 text-center font-semibold text-brand-primary transition-colors hover:border-brand-primary/60 hover:bg-brand-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {config.employees.length >= SOFT_LIMIT
                 ? `Maximum ${SOFT_LIMIT} Therapeut:innen erreicht`
-                : "+ Therapeut:in hinzufügen"}
+                : "+ Mitarbeiter:in hinzufügen"}
             </button>
             <p
               className="rounded-lg border px-3 py-2 text-sm font-medium"
@@ -496,7 +495,11 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
           </div>
         </div>
 
-        <ProfitLoss result={result} employees={config.employees} />
+        <ProfitLoss
+          result={result}
+          employees={config.employees}
+          sachkosten={config.sachkosten}
+        />
 
         <MetricsCard
           result={result}

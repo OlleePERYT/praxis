@@ -1,11 +1,14 @@
 "use client";
 
-import { C } from "@/lib/colors";
+import type { ReactNode } from "react";
 import type {
   PraxisResult,
   RevenueConfigDirect,
   RevenueConfigMix,
 } from "@/lib/engine";
+import Card from "./ui/Card";
+import Eyebrow from "./ui/Eyebrow";
+import GradientNumber from "./ui/GradientNumber";
 
 const pct1 = new Intl.NumberFormat("de-DE", {
   minimumFractionDigits: 1,
@@ -23,41 +26,54 @@ type MetricsCardProps = {
   revenueConfig: RevenueConfigDirect | RevenueConfigMix;
 };
 
+function riskTierLabel(pct: number): "high" | "medium" | "low" {
+  if (pct > 70) return "high";
+  if (pct >= 50) return "medium";
+  return "low";
+}
+
+function RiskPill({ pct }: { pct: number }) {
+  const tier = riskTierLabel(pct);
+  const label =
+    tier === "high"
+      ? "Risiko hoch"
+      : tier === "medium"
+        ? "Risiko mittel"
+        : "Risiko niedrig";
+  const cls =
+    tier === "high"
+      ? "bg-red-50 text-red-600 border border-red-200"
+      : tier === "medium"
+        ? "bg-orange-50 text-orange-600 border border-orange-200"
+        : "bg-green-50 text-green-700 border border-green-200";
+
+  return (
+    <span
+      className={`absolute right-3 top-3 inline-block text-[10px] font-semibold uppercase tracking-wider rounded-full px-2 py-0.5 ${cls}`}
+    >
+      {label}
+    </span>
+  );
+}
+
 type TileProps = {
   label: string;
-  value: string;
-  unit?: string;
-  valueColor?: string;
-  sub?: string;
+  value: ReactNode;
+  foot: string;
+  riskPct?: number;
 };
 
-function Tile({ label, value, unit, valueColor, sub }: TileProps) {
+function Tile({ label, value, foot, riskPct }: TileProps) {
   return (
     <div
-      className="rounded-lg border p-3"
-      style={{ borderColor: C.lightBg2, backgroundColor: C.lightBg }}
+      className="relative overflow-hidden rounded-2xl border border-[var(--color-brand-border-soft)] bg-white p-5 transition-colors hover:border-brand-primary/30"
     >
-      <p className="text-xs" style={{ color: C.gray }}>
+      {riskPct !== undefined ? <RiskPill pct={riskPct} /> : null}
+      <p className="text-xs font-semibold uppercase tracking-wider text-brand-muted">
         {label}
       </p>
-      <p className="mt-1 flex items-baseline gap-1">
-        <span
-          className="text-xl font-semibold tabular-nums sm:text-2xl"
-          style={{ color: valueColor ?? C.primary }}
-        >
-          {value}
-        </span>
-        {unit ? (
-          <span className="text-sm" style={{ color: C.gray }}>
-            {unit}
-          </span>
-        ) : null}
-      </p>
-      {sub ? (
-        <p className="mt-1 text-xs" style={{ color: C.lightGray }}>
-          {sub}
-        </p>
-      ) : null}
+      <div className="my-2 flex items-baseline">{value}</div>
+      <p className="text-xs text-brand-muted">{foot}</p>
     </div>
   );
 }
@@ -84,58 +100,86 @@ export function MetricsCard({
       : null;
 
   return (
-    <section
-      className="rounded-xl border p-4 shadow-sm"
-      style={{ backgroundColor: C.white, borderColor: C.lightBg2 }}
-    >
-      <h2 className="mb-4 text-xl font-semibold" style={{ color: C.primary }}>
-        Kennzahlen
-      </h2>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+    <Card variant="glow">
+      <Eyebrow>Kennzahlen</Eyebrow>
+      <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
         <Tile
-          label="Therapeut:innen-Stunden / Woche"
-          value={pct1.format(sumWeeklyHours)}
-          unit="Std."
+          label="Therapeut:innen-Stunden/Woche"
+          value={
+            <GradientNumber size="md" tone="positive">
+              {pct1.format(sumWeeklyHours)}
+            </GradientNumber>
+          }
+          foot="Std."
         />
         <Tile
-          label="Effektive Stunden / Jahr"
-          value={euro0.format(totalEff)}
-          unit="Std."
+          label="Effektive Stunden/Jahr"
+          value={
+            <GradientNumber size="md" tone="positive">
+              {euro0.format(totalEff)}
+            </GradientNumber>
+          }
+          foot="Std."
         />
         <Tile
-          label="Erlös / Anwesenheitsstunde"
-          value={pct2.format(revPerHour)}
-          unit="€/h"
+          label="Erlös/Anwesenheitsstunde"
+          value={
+            <GradientNumber size="md" tone="positive">
+              {pct2.format(revPerHour)}
+            </GradientNumber>
+          }
+          foot="€/h"
         />
         <Tile
           label="Personalkostenquote"
-          value={pct1.format(pkQuote)}
-          unit="%"
-          valueColor={pkQuote > 45 ? C.red : C.primary}
+          value={
+            <GradientNumber
+              size="md"
+              tone={pkQuote > 45 ? "negative" : "positive"}
+            >
+              {pct1.format(pkQuote)} %
+            </GradientNumber>
+          }
+          foot="%"
+          riskPct={pkQuote}
         />
         <Tile
-          label="Raumkostenquote (nur Miete)"
-          value={pct1.format(roomQuote)}
-          unit="%"
+          label="Raumkostenquote"
+          value={
+            <GradientNumber size="md" tone="positive">
+              {pct1.format(roomQuote)} %
+            </GradientNumber>
+          }
+          foot="%"
         />
         <Tile
           label="Überschussquote"
-          value={pct1.format(surplusQuote)}
-          unit="%"
-          valueColor={surplusQuote >= 0 ? C.green : C.red}
+          value={
+            <GradientNumber
+              size="md"
+              tone={surplusQuote < 0 ? "negative" : "positive"}
+            >
+              {pct1.format(surplusQuote)} %
+            </GradientNumber>
+          }
+          foot="%"
         />
         {gkvRisk !== null ? (
           <Tile
             label="GKV-abhängiger Umsatz"
-            value={euro0.format(gkvRisk.euro)}
-            unit="€"
-            sub={`${pct1.format(gkvRisk.pct)} % des Therapie-Umsatzes`}
-            valueColor={
-              gkvRisk.pct > 70 ? C.red : gkvRisk.pct > 50 ? C.orange : C.primary
+            value={
+              <GradientNumber
+                size="md"
+                tone={gkvRisk.pct > 70 ? "negative" : "positive"}
+              >
+                {euro0.format(gkvRisk.euro)}
+              </GradientNumber>
             }
+            foot={`${pct1.format(gkvRisk.pct)} % des Therapie-Umsatzes`}
+            riskPct={gkvRisk.pct}
           />
         ) : null}
       </div>
-    </section>
+    </Card>
   );
 }

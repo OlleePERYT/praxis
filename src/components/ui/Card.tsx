@@ -1,15 +1,20 @@
+"use client";
+
 import type { ReactNode } from "react";
 
 type CardProps = {
   children: ReactNode;
   variant?: "default" | "gradient-top" | "glow";
   className?: string;
+  /** Innenabstand des Inhalts (Standard: p-6). */
+  contentClassName?: string;
 };
 
 export default function Card({
   children,
   variant = "default",
   className = "",
+  contentClassName = "p-6",
 }: CardProps) {
   const base =
     "relative overflow-hidden rounded-2xl border border-brand-surface bg-white";
@@ -28,7 +33,7 @@ export default function Card({
           aria-hidden
         />
       ) : null}
-      <div className="p-6">{children}</div>
+      <div className={contentClassName}>{children}</div>
     </div>
   );
 }
