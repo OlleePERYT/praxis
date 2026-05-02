@@ -1,6 +1,7 @@
 "use client";
 
-import { C } from "@/lib/colors";
+import Eyebrow from "@/components/ui/Eyebrow";
+import GradientNumber from "@/components/ui/GradientNumber";
 import type { PraxisResult } from "@/lib/engine";
 
 type KpiBarProps = {
@@ -21,121 +22,112 @@ function formatEuro(value: number): string {
   return `${currencyFormatter.format(value)} €`;
 }
 
+function MiniMetric({
+  label,
+  value,
+  valueClassName = "text-brand-ink",
+}: {
+  label: string;
+  value: string;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--color-brand-border-soft)] bg-white/50 px-3 py-3 backdrop-blur-sm">
+      <div className="text-xs font-semibold uppercase tracking-wider text-brand-muted">
+        {label}
+      </div>
+      <div
+        className={`mt-1 text-base font-bold tabular-nums ${valueClassName}`}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
 export function KpiBar({ result, baseline }: KpiBarProps) {
-  const ueberschussColor =
-    result.ueberschuss > 0
-      ? C.green
-      : result.ueberschuss < 0
-        ? C.red
-        : C.primary;
   const perMonth = result.ueberschuss / 12;
   const pkPct = result.personalCostRatio * 100;
-  const pkColor = pkPct > 45 ? C.red : C.primary;
+  const pkClass = pkPct > 45 ? "text-red-600" : "text-brand-ink";
 
-  const delta = baseline
-    ? result.ueberschuss - baseline.result.ueberschuss
-    : null;
-  const deltaColor =
-    delta === null
-      ? C.lightGray
-      : delta > 0
-        ? C.green
-        : delta < 0
-          ? C.red
-          : C.lightGray;
-  const deltaSign = delta !== null && delta > 0 ? "+" : "";
+  const delta =
+    baseline !== null ? result.ueberschuss - baseline.result.ueberschuss : null;
+  const showDeltaPill =
+    baseline !== null && delta !== null && delta !== 0;
+
+  const ue = result.ueberschuss;
+  const absUe = currencyFormatter.format(Math.abs(ue));
+  const heroFigure =
+    ue > 0 ? `+${absUe} €` : ue < 0 ? `−${absUe} €` : `${absUe} €`;
 
   const hasEntnahme = result.inhaberEntnahmeJahr > 0;
-  const nachEntnahmeColor =
-    result.ueberschussNachEntnahme > 0
-      ? C.green
-      : result.ueberschussNachEntnahme < 0
-        ? C.red
-        : C.primary;
+
+  const deltaLabel =
+    delta === null
+      ? ""
+      : `${delta > 0 ? "+" : "−"}${currencyFormatter.format(Math.abs(delta))} € ggü. Baseline`;
 
   return (
-    <div
-      className="sticky top-0 z-50 border-b backdrop-blur"
-      style={{ backgroundColor: `${C.white}f0`, borderColor: C.lightBg2 }}
-    >
-      <div className="mx-auto w-full max-w-7xl px-4 py-3">
-        {/* Hero: Praxisüberschuss */}
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="text-sm font-medium" style={{ color: C.gray }}>
-            Praxisüberschuss
-          </span>
-          <span
-            className="text-2xl font-bold tabular-nums sm:text-3xl"
-            style={{ color: ueberschussColor }}
-          >
-            {formatEuro(result.ueberschuss)} / Jahr
-          </span>
-          <span className="text-sm tabular-nums" style={{ color: C.lightGray }}>
-            · {formatEuro(perMonth)} / Monat
-          </span>
-        </div>
-
-        {baseline ? (
-          <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
-            <span style={{ color: C.lightGray }}>
-              gegenüber Baseline {formatEuro(baseline.result.ueberschuss)}
-            </span>
-            <span
-              className="font-semibold tabular-nums"
-              style={{ color: deltaColor }}
-            >
-              {deltaSign}
-              {formatEuro(delta ?? 0)} / Jahr
-            </span>
-            <span className="tabular-nums" style={{ color: C.lightGray }}>
-              · {deltaSign}
-              {formatEuro((delta ?? 0) / 12)} / Monat
-            </span>
-          </div>
-        ) : null}
-
-        {hasEntnahme ? (
-          <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="text-sm font-medium" style={{ color: C.gray }}>
-              Nach Entnahme
-            </span>
-            <span
-              className="text-lg font-semibold tabular-nums sm:text-xl"
-              style={{ color: nachEntnahmeColor }}
-            >
-              {formatEuro(result.ueberschussNachEntnahme)} / Jahr
-            </span>
-            <span className="text-xs tabular-nums" style={{ color: C.lightGray }}>
-              · {formatEuro(result.ueberschussNachEntnahme / 12)} / Monat
-            </span>
-          </div>
-        ) : null}
-
-        {/* Sekundärwerte */}
+    <div className="sticky top-[64px] z-30 mt-4">
+      <div className="relative w-full overflow-hidden rounded-3xl border border-[var(--color-brand-border-soft)] bg-white/85 px-8 py-6 shadow-[var(--shadow-glow-md)] backdrop-blur-md">
         <div
-          className="mt-2 flex flex-wrap gap-x-5 gap-y-1 border-t pt-2 text-sm"
-          style={{ borderColor: C.lightBg2 }}
-        >
-          <span style={{ color: C.gray }}>
-            Umsatz{" "}
-            <strong className="tabular-nums" style={{ color: C.primary }}>
-              {formatEuro(result.revenue)}
-            </strong>
-          </span>
-          <span style={{ color: C.lightGray }}>·</span>
-          <span style={{ color: C.gray }}>
-            Kosten{" "}
-            <strong className="tabular-nums" style={{ color: C.primary }}>
-              {formatEuro(result.totalCost)}
-            </strong>
-          </span>
-          <span style={{ color: C.lightGray }}>·</span>
-          <span style={{ color: C.gray }}>
-            Personalkostenquote{" "}
-            <strong className="tabular-nums" style={{ color: pkColor }}>
-              {percentFormatter.format(pkPct)} %
-            </strong>
-          </span>
+          className="pointer-events-none absolute inset-0 rounded-3xl opacity-40"
+          style={{
+            background:
+              "radial-gradient(ellipse at 80% 50%, rgba(82,183,136,0.12) 0%, transparent 60%)",
+          }}
+          aria-hidden
+        />
+
+        <div className="relative z-10 flex flex-col gap-8 md:flex-row md:items-start md:justify-between md:gap-10">
+          <div className="relative min-w-0 flex-1 md:max-w-[min(100%,28rem)]">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <Eyebrow>Praxisüberschuss</Eyebrow>
+              {showDeltaPill ? (
+                <span
+                  className={`shrink-0 rounded-full border px-2 py-1 text-xs font-semibold tabular-nums ${
+                    delta! > 0
+                      ? "border-green-200 bg-green-50 text-green-700"
+                      : "border-red-200 bg-red-50 text-red-700"
+                  }`}
+                >
+                  {deltaLabel}
+                </span>
+              ) : null}
+            </div>
+
+            <div className="mt-3">
+              <GradientNumber
+                size="xl"
+                tone={result.ueberschuss < 0 ? "negative" : "positive"}
+              >
+                {heroFigure}
+              </GradientNumber>
+            </div>
+
+            <p className="mt-2 text-sm tabular-nums text-brand-muted">
+              {formatEuro(perMonth)}/Monat
+            </p>
+
+            {hasEntnahme ? (
+              <div className="mt-6 border-t border-[var(--color-brand-border-soft)] pt-4">
+                <p className="text-sm text-brand-muted">
+                  Nach Entnahme: {formatEuro(result.ueberschussNachEntnahme)}
+                  /Jahr
+                </p>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="grid w-full shrink-0 grid-cols-3 gap-3 sm:gap-4 md:max-w-md md:flex-1">
+            <MiniMetric label="Umsatz" value={formatEuro(result.revenue)} />
+            <MiniMetric label="Kosten" value={formatEuro(result.totalCost)} />
+            <MiniMetric
+              label="PK-Quote"
+              value={`${percentFormatter.format(pkPct)} %`}
+              valueClassName={pkClass}
+            />
+          </div>
         </div>
       </div>
     </div>

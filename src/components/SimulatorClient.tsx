@@ -250,10 +250,10 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
   const euro0 = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: C.pageBg }}>
+    <div className="flex min-h-0 flex-1 flex-col">
       <KpiBar result={result} baseline={baseline} />
 
-      <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6">
+      <main className="w-full space-y-6 py-6">
         <div
           className="flex flex-wrap items-center gap-2 rounded-lg border p-3"
           style={{ borderColor: C.lightBg2, backgroundColor: C.white }}

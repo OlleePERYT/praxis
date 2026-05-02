@@ -5,6 +5,7 @@ export const GRADIENTS = {
   primary: "linear-gradient(135deg, #2D6A4F 0%, #52B788 100%)",
   primarySoft: "linear-gradient(135deg, #E8F5EE 0%, #d4ecdf 100%)",
   surface: "linear-gradient(135deg, #F0EDE5 0%, #E8E4D9 100%)",
+  negative: "linear-gradient(135deg, #C0392B 0%, #E55C45 100%)",
 };
 
 export const SHADOWS = {

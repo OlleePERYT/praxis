@@ -42,12 +42,26 @@ export default async function DashboardPage() {
   } as CSSProperties;
 
   return (
-    <div className="flex min-h-screen flex-col" style={tenantCssVars}>
-      <PracticeHeader practiceName={practice.name} />
-      <div className="flex min-h-0 flex-1 flex-col">
-        <SimulatorClient initialConfig={initialConfig} />
+    <div
+      className="relative flex min-h-screen flex-col bg-brand-bg"
+      style={tenantCssVars}
+    >
+      <div
+        className="pointer-events-none absolute inset-0 z-0"
+        aria-hidden
+        style={{
+          backgroundImage: `
+            radial-gradient(ellipse at 90% 10%, rgba(82,183,136,0.08) 0%, transparent 50%),
+            radial-gradient(ellipse at 10% 90%, rgba(122,139,77,0.06) 0%, transparent 50%)`,
+        }}
+      />
+      <div className="relative z-10 flex min-h-screen flex-col">
+        <PracticeHeader practiceName={practice.name} />
+        <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-6 pb-6">
+          <SimulatorClient initialConfig={initialConfig} />
+        </div>
+        <PracticeFooter />
       </div>
-      <PracticeFooter />
     </div>
   );
 }
