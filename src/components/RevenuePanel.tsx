@@ -72,7 +72,7 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
           value={config.revPerHour}
           min={0}
           max={300}
-          step={5}
+          step={1}
           unit="€/h"
           hint="35 € (nur GKV) | 65 € (Mix) | 85 € (Premium)"
           onChange={(revPerHour) => onChange({ mode: "direct", revPerHour })}
