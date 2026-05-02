@@ -23,6 +23,8 @@ const middlewareImpl = (req: NextAuthRequest) => {
   const { nextUrl } = req;
   const { pathname } = nextUrl;
 
+  const subdomain = getSubdomain(req.headers.get("host"));
+
   const isAuthApi = pathname.startsWith("/api/auth");
   const isLoginPage = pathname === "/login";
   const isPublicAsset =
@@ -32,9 +34,10 @@ const middlewareImpl = (req: NextAuthRequest) => {
     pathname.startsWith("/assets");
 
   const isMarketingPublic =
-    pathname === "/" ||
-    pathname.startsWith("/impressum") ||
-    pathname.startsWith("/datenschutz");
+    !subdomain &&
+    (pathname === "/" ||
+      pathname.startsWith("/impressum") ||
+      pathname.startsWith("/datenschutz"));
   const isContactApi = pathname.startsWith("/api/contact");
 
   if (isAuthApi || isLoginPage || isPublicAsset) {
@@ -42,7 +45,6 @@ const middlewareImpl = (req: NextAuthRequest) => {
   }
 
   if (isMarketingPublic || isContactApi) {
-    const subdomain = getSubdomain(req.headers.get("host"));
     const requestHeaders = new Headers(req.headers);
     if (subdomain) {
       requestHeaders.set("x-practice-subdomain", subdomain);
@@ -61,7 +63,6 @@ const middlewareImpl = (req: NextAuthRequest) => {
     return NextResponse.redirect(loginUrl);
   }
 
-  const subdomain = getSubdomain(req.headers.get("host"));
   const requestHeaders = new Headers(req.headers);
   if (subdomain) {
     requestHeaders.set("x-practice-subdomain", subdomain);
