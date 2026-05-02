@@ -14,6 +14,17 @@ export const SHADOWS = {
   glowLg: "0 30px 60px -20px rgba(45,106,79,0.25)",
 };
 
+/** Feste Hex-Werte für Recharts Pie-Segmente (Brand-Palette). */
+export const BRAND_PIE_COLORS = [
+  "#2D6A4F",
+  "#52B788",
+  "#7A8B4D",
+  "#94B89E",
+  "#3D8B68",
+  "#A8C29D",
+  "#1d4a35",
+] as const;
+
 export const C = {
   primary: "var(--c-primary)",
   accent: "var(--c-accent)",
