@@ -17,6 +17,23 @@
   --color-brand-surface: #edeae3;
   --color-brand-text: #3d4a40;
   --color-brand-muted: #6b7b6e;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #2d6a4f 0%, #52b788 100%);
+  --gradient-primary-soft: linear-gradient(135deg, #e8f5ee 0%, #d4ecdf 100%);
+  --gradient-surface: linear-gradient(135deg, #f0ede5 0%, #e8e4d9 100%);
+
+  /* Glow-Schatten */
+  --shadow-glow-sm: 0 8px 20px -8px rgba(45, 106, 79, 0.3);
+  --shadow-glow-md: 0 20px 40px -10px rgba(45, 106, 79, 0.18);
+  --shadow-glow-lg: 0 30px 60px -20px rgba(45, 106, 79, 0.25);
+
+  /* Surface-Varianten */
+  --color-brand-surface-warm: #f0ede5;
+  --color-brand-surface-cool: #e8f5ee;
+  --color-brand-border-soft: rgba(229, 224, 215, 0.6);
+  --color-brand-border-accent: rgba(45, 106, 79, 0.25);
+
   --font-sans: "Manrope", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;

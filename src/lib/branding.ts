@@ -13,13 +13,23 @@ export function resolveBranding(branding: BrandingConfig | undefined): {
   primary: string;
   accent: string;
 } {
-  const primary = branding?.primaryColor || DEFAULT_PRIMARY;
-  const accent =
-    branding?.accentColor ||
-    (branding?.primaryColor ? lightenHex(branding.primaryColor, 20) : DEFAULT_ACCENT);
-  return { primary, accent };
+  // TEMP: Tenant-Branding deaktiviert für v5-Refactor. Reaktivierung später.
+  void branding;
+  return {
+    primary: DEFAULT_PRIMARY,
+    accent: DEFAULT_ACCENT,
+  };
+
+  // -- Original-Logik bleibt unten als Kommentar / dead code --
+  // const primary = branding?.primaryColor || DEFAULT_PRIMARY;
+  // const accent =
+  //   branding?.accentColor ||
+  //   (branding?.primaryColor ? lightenHex(branding.primaryColor, 20) : DEFAULT_ACCENT);
+  // return { primary, accent };
 }
 
+/** Bei Reaktivierung Tenant-Branding wieder von resolveBranding aufrufen. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- bis Reaktivierung resolveBranding
 function lightenHex(hex: string, percent: number): string {
   const cleaned = hex.replace("#", "");
   if (!/^[0-9a-f]{6}$/i.test(cleaned)) return hex;

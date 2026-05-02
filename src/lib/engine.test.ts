@@ -790,7 +790,7 @@ const refDefaults = {
   );
 }
 
-// Test 19: resolveBranding.
+// Test 19: resolveBranding (TEMP v5: Overrides werden ignoriert, immer Defaults).
 {
   const d = resolveBranding(undefined);
   console.assert(
@@ -799,14 +799,19 @@ const refDefaults = {
   );
 
   const onlyP = resolveBranding({ primaryColor: "#000000" });
-  console.assert(onlyP.primary === "#000000", "Test 19b: primary gesetzt.");
-  console.assert(onlyP.accent !== "#000000", "Test 19c: accent abgeleitet (heller).");
+  console.assert(
+    onlyP.primary === DEFAULT_PRIMARY && onlyP.accent === DEFAULT_ACCENT,
+    "Test 19b: TEMP — tenant-primary ignoriert.",
+  );
 
   const both = resolveBranding({
     primaryColor: "#000000",
     accentColor: "#ffffff",
   });
-  console.assert(both.primary === "#000000" && both.accent === "#ffffff", "Test 19d: beide gesetzt.");
+  console.assert(
+    both.primary === DEFAULT_PRIMARY && both.accent === DEFAULT_ACCENT,
+    "Test 19c: TEMP — beide Tenant-Farben ignoriert.",
+  );
 }
 
 console.log("Alle Engine-Tests erfolgreich.");
