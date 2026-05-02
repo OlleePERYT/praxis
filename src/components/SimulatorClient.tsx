@@ -8,6 +8,7 @@ import { MetricsCard } from "./MetricsCard";
 import { PraxisCharts } from "./PraxisCharts";
 import { ProfitLoss } from "./ProfitLoss";
 import { RevenuePanel } from "./RevenuePanel";
+import { SachkostenPanel } from "./SachkostenPanel";
 import { ScenarioPanel } from "./ScenarioPanel";
 import { StepSlider } from "./StepSlider";
 import { C } from "@/lib/colors";
@@ -136,27 +137,10 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
                 hint="500 € | 1.500 € | 3.000 €"
                 onChange={(mieteMonat) => setConfig((prev) => ({ ...prev, mieteMonat }))}
               />
-              <StepSlider
-                label="Sachkosten pro Jahr"
-                value={
-                  config.sachkosten.mode === "direct"
-                    ? config.sachkosten.value
-                    : config.sachkosten.raumNebenkosten +
-                      config.sachkosten.material +
-                      config.sachkosten.software +
-                      config.sachkosten.versicherungen +
-                      config.sachkosten.marketing +
-                      config.sachkosten.sonstiges
-                }
-                min={0}
-                max={80000}
-                step={1000}
-                unit="€"
-                onChange={(value) =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    sachkosten: { mode: "direct", value },
-                  }))
+              <SachkostenPanel
+                config={config.sachkosten}
+                onChange={(sachkosten) =>
+                  setConfig((prev) => ({ ...prev, sachkosten }))
                 }
               />
               <StepSlider
