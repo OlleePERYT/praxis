@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { ComparisonTable } from "./ComparisonTable";
 import { EmployeeCard } from "./EmployeeCard";
-import { GlanceCard } from "./GlanceCard";
 import { KpiBar } from "./KpiBar";
 import { MetricsCard } from "./MetricsCard";
 import { PraxisCharts } from "./PraxisCharts";
@@ -72,8 +71,6 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
       <KpiBar result={result} />
 
       <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6">
-        <GlanceCard result={result} />
-
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-4">
             <h2 className="text-xl font-semibold" style={{ color: C.primary }}>

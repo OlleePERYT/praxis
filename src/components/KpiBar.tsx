@@ -1,7 +1,7 @@
 "use client";
 
 import { C } from "@/lib/colors";
-import { PraxisResult } from "@/lib/engine";
+import type { PraxisResult } from "@/lib/engine";
 
 type KpiBarProps = {
   result: PraxisResult;
@@ -21,55 +21,63 @@ function formatEuro(value: number): string {
 }
 
 export function KpiBar({ result }: KpiBarProps) {
-  const ueberschussClass =
-    result.ueberschuss > 0 ? C.green : result.ueberschuss < 0 ? C.red : C.primary;
+  const ueberschussColor =
+    result.ueberschuss > 0
+      ? C.green
+      : result.ueberschuss < 0
+        ? C.red
+        : C.primary;
   const perMonth = result.ueberschuss / 12;
+  const pkPct = result.personalCostRatio * 100;
+  const pkColor = pkPct > 45 ? C.red : C.primary;
 
   return (
     <div
       className="sticky top-0 z-50 border-b backdrop-blur"
       style={{ backgroundColor: `${C.white}f0`, borderColor: C.lightBg2 }}
     >
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-2 gap-2 px-4 py-3 sm:grid-cols-3 lg:grid-cols-5">
-        <div>
-          <p className="text-xs" style={{ color: C.lightGray }}>
-            Umsatz
-          </p>
-          <p className="text-lg font-semibold tabular-nums" style={{ color: C.primary }}>
-            {formatEuro(result.revenue)}
-          </p>
+      <div className="mx-auto w-full max-w-7xl px-4 py-3">
+        {/* Hero: Praxisüberschuss */}
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="text-sm font-medium" style={{ color: C.gray }}>
+            Praxisüberschuss
+          </span>
+          <span
+            className="text-2xl font-bold tabular-nums sm:text-3xl"
+            style={{ color: ueberschussColor }}
+          >
+            {formatEuro(result.ueberschuss)} / Jahr
+          </span>
+          <span className="text-sm tabular-nums" style={{ color: C.lightGray }}>
+            · {formatEuro(perMonth)} / Monat
+          </span>
         </div>
-        <div>
-          <p className="text-xs" style={{ color: C.lightGray }}>
-            Personalkosten
-          </p>
-          <p className="text-lg font-semibold tabular-nums" style={{ color: C.primary }}>
-            {formatEuro(result.personalCost)}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs" style={{ color: C.lightGray }}>
-            Überschuss
-          </p>
-          <p className="text-lg font-semibold tabular-nums" style={{ color: ueberschussClass }}>
-            {formatEuro(result.ueberschuss)}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs" style={{ color: C.lightGray }}>
-            Überschuss / Monat
-          </p>
-          <p className="text-lg font-semibold tabular-nums" style={{ color: ueberschussClass }}>
-            {formatEuro(perMonth)}
-          </p>
-        </div>
-        <div className="col-span-2 sm:col-span-1">
-          <p className="text-xs" style={{ color: C.lightGray }}>
-            Personalkostenquote
-          </p>
-          <p className="text-lg font-semibold tabular-nums" style={{ color: C.primary }}>
-            {percentFormatter.format(result.personalCostRatio * 100)} %
-          </p>
+
+        {/* Sekundärwerte */}
+        <div
+          className="mt-2 flex flex-wrap gap-x-5 gap-y-1 border-t pt-2 text-sm"
+          style={{ borderColor: C.lightBg2 }}
+        >
+          <span style={{ color: C.gray }}>
+            Umsatz{" "}
+            <strong className="tabular-nums" style={{ color: C.primary }}>
+              {formatEuro(result.revenue)}
+            </strong>
+          </span>
+          <span style={{ color: C.lightGray }}>·</span>
+          <span style={{ color: C.gray }}>
+            Kosten{" "}
+            <strong className="tabular-nums" style={{ color: C.primary }}>
+              {formatEuro(result.totalCost)}
+            </strong>
+          </span>
+          <span style={{ color: C.lightGray }}>·</span>
+          <span style={{ color: C.gray }}>
+            Personalkostenquote{" "}
+            <strong className="tabular-nums" style={{ color: pkColor }}>
+              {percentFormatter.format(pkPct)} %
+            </strong>
+          </span>
         </div>
       </div>
     </div>
