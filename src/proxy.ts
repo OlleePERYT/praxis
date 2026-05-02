@@ -28,7 +28,8 @@ const middlewareImpl = (req: NextAuthRequest) => {
   const isPublicAsset =
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon.ico") ||
-    pathname.startsWith("/public");
+    pathname.startsWith("/public") ||
+    pathname.startsWith("/assets");
 
   const isMarketingPublic =
     pathname === "/" ||
