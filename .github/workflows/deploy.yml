@@ -22,9 +22,15 @@ jobs:
           script: |
             cd /var/www/praxis-kennzahlen
             git pull origin main
+            rm -rf .next
             npm ci
             NODE_ENV=production npm run build
             pm2 restart praxis-kennzahlen || pm2 start npm --name praxis-kennzahlen -- start
-            sleep 5 && curl -f http://localhost:3001 || exit 1
+            for i in 1 2 3 4 5; do
+              curl -f http://localhost:3001 && break
+              echo "Versuch $i fehlgeschlagen, warte 5s..."
+              sleep 5
+            done
+            curl -f http://localhost:3001 || exit 1
 
       # .env.local wird nicht committed und muss auf dem VPS vorhanden sein.
