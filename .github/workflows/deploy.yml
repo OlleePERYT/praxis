@@ -23,14 +23,24 @@ jobs:
             cd /var/www/praxis-kennzahlen
             git pull origin main
             rm -rf .next
+            rm -rf node_modules
             npm ci
             NODE_ENV=production npm run build
-            pm2 restart praxis-kennzahlen || pm2 start npm --name praxis-kennzahlen -- start
-            for i in 1 2 3 4 5; do
-              curl -f http://localhost:3001 && break
+            if pm2 describe praxis-kennzahlen > /dev/null 2>&1; then
+              pm2 restart praxis-kennzahlen
+            else
+              pm2 start ecosystem.config.js --only praxis-kennzahlen
+            fi
+            sleep 5
+            for i in 1 2 3 4 5 6 7 8 9 10; do
+              if curl -fsS -o /dev/null http://127.0.0.1:3001/login; then
+                echo "Health-Check OK (Versuch $i)"
+                exit 0
+              fi
               echo "Versuch $i fehlgeschlagen, warte 5s..."
               sleep 5
             done
-            curl -f http://localhost:3001 || exit 1
+            echo "Health-Check nach 10 Versuchen fehlgeschlagen"
+            exit 1
 
       # .env.local wird nicht committed und muss auf dem VPS vorhanden sein.
