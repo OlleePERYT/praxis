@@ -12,7 +12,6 @@ export const metadata: Metadata = {
   title: "praxis-kennzahlen.de",
   description:
     "Wirtschaftlicher Szenario-Simulator für Therapiepraxen: Erlöse, Kosten und Überschuss in Echtzeit modellieren.",
-  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({
