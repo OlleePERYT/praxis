@@ -28,13 +28,13 @@ export function ProfitLoss({ result, employees }: ProfitLossProps) {
 
       <div className="space-y-2 text-sm">
         <p className="font-medium" style={{ color: C.gray }}>
-          Einnahmen
+          Umsatz
         </p>
         <Row label="Therapie-Erlöse" value={result.revenueTherapy} />
         {result.untermieteJahr > 0 ? (
           <Row label="Untermiete" value={result.untermieteJahr} />
         ) : null}
-        <Row label="Σ Einnahmen" value={result.totalIncome} bold />
+        <Row label="Σ Umsatz" value={result.totalIncome} bold />
       </div>
 
       <div className="space-y-2 border-t pt-3 text-sm" style={{ borderColor: C.lightBg2 }}>
@@ -47,7 +47,7 @@ export function ProfitLoss({ result, employees }: ProfitLossProps) {
           return (
             <Row
               key={i}
-              label={`Personal ${e.name} (inkl. AG)`}
+              label={`Personal ${e.name} (inkl. AG-Anteil)`}
               value={d.cost}
             />
           );

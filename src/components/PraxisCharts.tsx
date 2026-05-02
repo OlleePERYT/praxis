@@ -29,7 +29,7 @@ export function PraxisCharts({ result }: PraxisChartsProps) {
   const costSlices: { name: string; value: number }[] = [];
   result.employeeDetails.forEach((d, i) => {
     costSlices.push({
-      name: d.name || `MA ${i + 1}`,
+      name: d.name || `Therapeut:in ${i + 1}`,
       value: d.cost,
     });
   });
@@ -48,7 +48,7 @@ export function PraxisCharts({ result }: PraxisChartsProps) {
       const share = therapyTotal * (d.effHours / totalEff);
       if (share > 0) {
         revSlices.push({
-          name: d.name || `MA ${i + 1}`,
+          name: d.name || `Therapeut:in ${i + 1}`,
           value: share,
         });
       }
