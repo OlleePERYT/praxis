@@ -405,63 +405,44 @@ export function AuswertungTab({ config, result }: AuswertungTabProps) {
             )}
           </div>
         </Card>
-      ) : (
-        <Card variant="default" contentClassName="p-6">
-          <Eyebrow>Erlös-Mix</Eyebrow>
-          <h3 className="mb-2 mt-3 text-xl font-bold text-brand-ink">
-            Nur im Mix-Modus
-          </h3>
-          <p className="text-sm leading-relaxed text-brand-text">
-            Die Aufteilung nach GKV, PKV, BG und Selbstzahler ist im Erlös-Modell
-            „Mix“ verfügbar. Wechseln Sie im Cockpit unter Erlöse auf Mix, um diese
-            Grafik zu sehen.
-          </p>
-        </Card>
-      )}
+      ) : null}
 
-      <Card variant="default" contentClassName="p-6">
-        <Eyebrow>GKV-Risiko</Eyebrow>
-        <h3 className="mb-2 mt-3 text-xl font-bold text-brand-ink">
-          GKV-Anteil am Therapie-Umsatz
-        </h3>
-        {isMix ? (
-          <>
-            <div className="relative mx-auto h-[280px] max-w-md">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadialBarChart
-                  cx="50%"
-                  cy="92%"
-                  innerRadius="52%"
-                  outerRadius="92%"
-                  data={radialData}
-                  startAngle={180}
-                  endAngle={0}
-                >
-                  <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-                  <RadialBar
-                    background={{ fill: "rgba(232,228,217,0.9)" }}
-                    dataKey="value"
-                    cornerRadius={8}
-                  />
-                </RadialBarChart>
-              </ResponsiveContainer>
-              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pb-10 pt-6">
-                <p className="text-4xl font-bold tabular-nums text-brand-ink">
-                  {pct1.format(gkvPct)} %
-                </p>
-                <p className="mt-1 max-w-[12rem] text-center text-xs text-brand-muted">
-                  GKV-Anteil am Therapie-Umsatz
-                </p>
-              </div>
+      {isMix ? (
+        <Card variant="default" contentClassName="p-6">
+          <Eyebrow>GKV-Risiko</Eyebrow>
+          <h3 className="mb-2 mt-3 text-xl font-bold text-brand-ink">
+            GKV-Anteil am Therapie-Umsatz
+          </h3>
+          <div className="relative mx-auto h-[280px] max-w-md">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadialBarChart
+                cx="50%"
+                cy="92%"
+                innerRadius="52%"
+                outerRadius="92%"
+                data={radialData}
+                startAngle={180}
+                endAngle={0}
+              >
+                <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+                <RadialBar
+                  background={{ fill: "rgba(232,228,217,0.9)" }}
+                  dataKey="value"
+                  cornerRadius={8}
+                />
+              </RadialBarChart>
+            </ResponsiveContainer>
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pb-10 pt-6">
+              <p className="text-4xl font-bold tabular-nums text-brand-ink">
+                {pct1.format(gkvPct)} %
+              </p>
+              <p className="mt-1 max-w-[12rem] text-center text-xs text-brand-muted">
+                GKV-Anteil am Therapie-Umsatz
+              </p>
             </div>
-          </>
-        ) : (
-          <p className="mt-4 text-sm leading-relaxed text-brand-text">
-            Die GKV-Visualisierung bezieht sich auf den Mix-Modus. Bitte aktivieren
-            Sie unter Erlöse den Modus „Mix“, um den Anteil zu bewerten.
-          </p>
-        )}
-      </Card>
+          </div>
+        </Card>
+      ) : null}
 
       <Card variant="default" contentClassName="p-6">
         <Eyebrow>Personal</Eyebrow>

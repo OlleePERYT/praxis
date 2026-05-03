@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ComparisonTable } from "./ComparisonTable";
-import { DashboardTabs } from "./DashboardTabs";
+import { hashToTab, type DashboardTabId } from "./DashboardTabs";
 import { KpiBar } from "./KpiBar";
+import { PracticeHeader } from "./PracticeHeader";
 import { ScenarioPanel } from "./ScenarioPanel";
 import { AuswertungTab } from "./tabs/AuswertungTab";
 import { CockpitTab } from "./tabs/CockpitTab";
@@ -37,6 +38,7 @@ function formatBaselineLabel(iso: string): string {
 }
 
 type SimulatorClientProps = {
+  practiceName: string;
   initialConfig: PraxisConfig;
   initialBaseline?: Baseline | null;
 };
@@ -51,9 +53,29 @@ function sealPersistedPayload(cfg: PraxisConfig, b: Baseline | null): string {
 }
 
 export function SimulatorClient({
+  practiceName,
   initialConfig,
   initialBaseline = null,
 }: SimulatorClientProps) {
+  const [activeTab, setActiveTab] = useState<DashboardTabId>(() =>
+    typeof window !== "undefined" ? hashToTab(window.location.hash) : "cockpit",
+  );
+
+  const syncTabFromHash = useCallback(() => {
+    setActiveTab(hashToTab(typeof window !== "undefined" ? window.location.hash : ""));
+  }, []);
+
+  useEffect(() => {
+    syncTabFromHash();
+    window.addEventListener("popstate", syncTabFromHash);
+    return () => window.removeEventListener("popstate", syncTabFromHash);
+  }, [syncTabFromHash]);
+
+  const selectTab = useCallback((tab: DashboardTabId) => {
+    setActiveTab(tab);
+    window.history.replaceState(null, "", `#${tab}`);
+  }, []);
+
   const [config, setConfig] = useState<PraxisConfig>(initialConfig);
   const [expanded, setExpanded] = useState<boolean[]>(() =>
     initialConfig.employees.map(() => false),
@@ -374,104 +396,115 @@ export function SimulatorClient({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <KpiBar result={result} baseline={baseline} />
+      <PracticeHeader
+        practiceName={practiceName}
+        dashboardTabs={{
+          activeTab,
+          onSelectTab: selectTab,
+        }}
+      />
+      <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col px-6 pb-6">
+        <KpiBar result={result} baseline={baseline} />
 
-      <DashboardTabs
-        cockpit={
-          <CockpitTab
-            softLimit={SOFT_LIMIT}
-            config={config}
-            result={result}
-            expanded={expanded}
-            visibleIndices={visibleIndices}
-            anyExpanded={anyExpanded}
-            toggleAll={toggleAll}
-            toggleExpanded={toggleExpanded}
-            updateEmployee={updateEmployee}
-            removeEmployee={removeEmployee}
-            addEmployee={addEmployee}
-            sumWeeklyHours={sumWeeklyHours}
-            sumEffHours={sumEffHours}
-            updateRevenue={updateRevenue}
-            updateSachkosten={updateSachkosten}
-            setUntermiete={(untermiete) =>
-              setConfig((prev) => ({ ...prev, untermiete }))
-            }
-            setHandelswareJahr={(handelswareJahr) =>
-              setConfig((prev) => ({ ...prev, handelswareJahr }))
-            }
-            setMieteMonat={(mieteMonat) =>
-              setConfig((prev) => ({ ...prev, mieteMonat }))
-            }
-            setGfGehaltMonat={(gfGehaltMonat) =>
-              setConfig((prev) => ({ ...prev, gfGehaltMonat }))
-            }
-          />
-        }
-        auswertung={<AuswertungTab config={config} result={result} />}
-        vergleich={
-          <VergleichTab
-            showEmptyHint={baseline === null && config.refRevenue <= 0}
-            rememberBusy={rememberBusy}
-            onRememberComparisonPoint={rememberComparisonPoint}
-            comparisonTable={
-              config.refRevenue > 0 ? (
-                <ComparisonTable
-                  result={result}
-                  refRevenue={config.refRevenue}
-                  refCosts={config.refCosts}
-                  refSurplus={config.refSurplus}
-                  refLabel={config.refLabel}
-                />
-              ) : null
-            }
-          >
-            <ScenarioPanel
-              currentConfig={config}
-              onLoad={loadScenario}
-              baselineScenarioInlineRef={scenarioInlineRef}
-              workspaceError={workspaceError}
-              rememberBusy={rememberBusy}
-              baseline={
-                baseline
-                  ? {
-                      state: "active",
-                      savedLabel: formatBaselineLabel(baseline.savedAt),
-                      onReset: resetToBaseline,
-                      onUpdate: rememberComparisonPoint,
-                      onClear: clearBaseline,
-                      baselineScenario: {
-                        inlineOpen: savingScenario,
-                        scenarioName,
-                        onScenarioNameChange: setScenarioName,
-                        onToggleInline: () => {
-                          setScenarioSaveSuccessFlash(false);
-                          if (successFlashTimeoutRef.current) {
-                            clearTimeout(successFlashTimeoutRef.current);
-                            successFlashTimeoutRef.current = null;
-                          }
-                          setSavingScenario((open) => {
-                            if (open) {
-                              setScenarioName("");
-                              setSaveError(null);
-                              return false;
-                            }
-                            setSaveError(null);
-                            return true;
-                          });
-                        },
-                        onConfirmSave: handleSaveBaselineScenario,
-                        pending: scenarioSavePending,
-                        successFlash: scenarioSaveSuccessFlash,
-                        error: saveError,
-                      },
-                    }
-                  : { state: "empty", onRemember: rememberComparisonPoint }
+        <div className="w-full space-y-6 pt-6">
+          {activeTab === "cockpit" ? (
+            <CockpitTab
+              softLimit={SOFT_LIMIT}
+              config={config}
+              result={result}
+              expanded={expanded}
+              visibleIndices={visibleIndices}
+              anyExpanded={anyExpanded}
+              toggleAll={toggleAll}
+              toggleExpanded={toggleExpanded}
+              updateEmployee={updateEmployee}
+              removeEmployee={removeEmployee}
+              addEmployee={addEmployee}
+              sumWeeklyHours={sumWeeklyHours}
+              sumEffHours={sumEffHours}
+              updateRevenue={updateRevenue}
+              updateSachkosten={updateSachkosten}
+              setUntermiete={(untermiete) =>
+                setConfig((prev) => ({ ...prev, untermiete }))
+              }
+              setHandelswareJahr={(handelswareJahr) =>
+                setConfig((prev) => ({ ...prev, handelswareJahr }))
+              }
+              setMieteMonat={(mieteMonat) =>
+                setConfig((prev) => ({ ...prev, mieteMonat }))
+              }
+              setGfGehaltMonat={(gfGehaltMonat) =>
+                setConfig((prev) => ({ ...prev, gfGehaltMonat }))
               }
             />
-          </VergleichTab>
-        }
-      />
+          ) : null}
+          {activeTab === "auswertung" ? (
+            <AuswertungTab config={config} result={result} />
+          ) : null}
+          {activeTab === "vergleich" ? (
+            <VergleichTab
+              showEmptyHint={baseline === null && config.refRevenue <= 0}
+              rememberBusy={rememberBusy}
+              onRememberComparisonPoint={rememberComparisonPoint}
+              comparisonTable={
+                config.refRevenue > 0 ? (
+                  <ComparisonTable
+                    result={result}
+                    refRevenue={config.refRevenue}
+                    refCosts={config.refCosts}
+                    refSurplus={config.refSurplus}
+                    refLabel={config.refLabel}
+                  />
+                ) : null
+              }
+            >
+              <ScenarioPanel
+                currentConfig={config}
+                onLoad={loadScenario}
+                baselineScenarioInlineRef={scenarioInlineRef}
+                workspaceError={workspaceError}
+                rememberBusy={rememberBusy}
+                baseline={
+                  baseline
+                    ? {
+                        state: "active",
+                        savedLabel: formatBaselineLabel(baseline.savedAt),
+                        onReset: resetToBaseline,
+                        onUpdate: rememberComparisonPoint,
+                        onClear: clearBaseline,
+                        baselineScenario: {
+                          inlineOpen: savingScenario,
+                          scenarioName,
+                          onScenarioNameChange: setScenarioName,
+                          onToggleInline: () => {
+                            setScenarioSaveSuccessFlash(false);
+                            if (successFlashTimeoutRef.current) {
+                              clearTimeout(successFlashTimeoutRef.current);
+                              successFlashTimeoutRef.current = null;
+                            }
+                            setSavingScenario((open) => {
+                              if (open) {
+                                setScenarioName("");
+                                setSaveError(null);
+                                return false;
+                              }
+                              setSaveError(null);
+                              return true;
+                            });
+                          },
+                          onConfirmSave: handleSaveBaselineScenario,
+                          pending: scenarioSavePending,
+                          successFlash: scenarioSaveSuccessFlash,
+                          error: saveError,
+                        },
+                      }
+                    : { state: "empty", onRemember: rememberComparisonPoint }
+                }
+              />
+            </VergleichTab>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

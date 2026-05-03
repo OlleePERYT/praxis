@@ -2,7 +2,6 @@ import type { CSSProperties } from "react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { PracticeFooter } from "@/components/PracticeFooter";
-import { PracticeHeader } from "@/components/PracticeHeader";
 import { SimulatorClient } from "@/components/SimulatorClient";
 import { db } from "@/db";
 import { resolveBranding } from "@/lib/branding";
@@ -66,13 +65,11 @@ export default async function DashboardPage() {
         }}
       />
       <div className="relative z-10 flex min-h-screen flex-col">
-        <PracticeHeader practiceName={practice.name} />
-        <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-6 pb-6">
-          <SimulatorClient
-            initialConfig={initialConfig}
-            initialBaseline={initialBaseline}
-          />
-        </div>
+        <SimulatorClient
+          practiceName={practice.name}
+          initialConfig={initialConfig}
+          initialBaseline={initialBaseline}
+        />
         <PracticeFooter />
       </div>
     </div>

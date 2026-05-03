@@ -1,13 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useState } from "react";
 
 export type DashboardTabId = "cockpit" | "auswertung" | "vergleich";
 
 const VALID = new Set<DashboardTabId>(["cockpit", "auswertung", "vergleich"]);
 
-function hashToTab(hash: string): DashboardTabId {
+export function hashToTab(hash: string): DashboardTabId {
   const h = hash.replace(/^#/, "").toLowerCase();
   if (h && VALID.has(h as DashboardTabId)) {
     return h as DashboardTabId;
@@ -52,32 +51,17 @@ function IconCompare() {
   );
 }
 
-type DashboardTabsProps = {
-  cockpit: ReactNode;
-  auswertung: ReactNode;
-  vergleich: ReactNode;
+export type DashboardTabNavProps = {
+  activeTab: DashboardTabId;
+  onSelectTab: (tab: DashboardTabId) => void;
+  className?: string;
 };
 
-export function DashboardTabs({ cockpit, auswertung, vergleich }: DashboardTabsProps) {
-  const [activeTab, setActiveTab] = useState<DashboardTabId>(() =>
-    typeof window !== "undefined" ? hashToTab(window.location.hash) : "cockpit",
-  );
-
-  const syncFromHash = useCallback(() => {
-    setActiveTab(hashToTab(typeof window !== "undefined" ? window.location.hash : ""));
-  }, []);
-
-  useEffect(() => {
-    syncFromHash();
-    window.addEventListener("popstate", syncFromHash);
-    return () => window.removeEventListener("popstate", syncFromHash);
-  }, [syncFromHash]);
-
-  const selectTab = (tab: DashboardTabId) => {
-    setActiveTab(tab);
-    window.history.replaceState(null, "", `#${tab}`);
-  };
-
+export function DashboardTabNav({
+  activeTab,
+  onSelectTab,
+  className = "",
+}: DashboardTabNavProps) {
   const tabs: { id: DashboardTabId; label: string; icon: ReactNode }[] = [
     { id: "cockpit", label: "Cockpit", icon: <IconCockpit /> },
     { id: "auswertung", label: "Auswertung", icon: <IconChart /> },
@@ -85,41 +69,31 @@ export function DashboardTabs({ cockpit, auswertung, vergleich }: DashboardTabsP
   ];
 
   return (
-    <>
-      <nav
-        className="sticky top-[132px] z-[25] border-b border-[var(--color-brand-border-soft)] bg-brand-bg/85 py-3 backdrop-blur-md"
-        aria-label="Dashboard-Bereiche"
-      >
-        <div className="mx-auto flex max-w-7xl justify-center">
-          <div className="inline-flex gap-1 rounded-full bg-brand-surface/60 p-1">
-            {tabs.map(({ id, label, icon }) => {
-              const active = activeTab === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => selectTab(id)}
-                  className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition ${
-                    active
-                      ? "bg-white text-brand-primary shadow-sm"
-                      : "text-brand-muted hover:bg-white/50 hover:text-brand-ink"
-                  }`}
-                  aria-current={active ? "page" : undefined}
-                >
-                  <span className="shrink-0">{icon}</span>
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </nav>
-
-        <div className="mx-auto w-full max-w-7xl pb-6 pt-6">
-        {activeTab === "cockpit" ? cockpit : null}
-        {activeTab === "auswertung" ? auswertung : null}
-        {activeTab === "vergleich" ? vergleich : null}
+    <nav
+      className={`flex w-full justify-center ${className}`}
+      aria-label="Dashboard-Bereiche"
+    >
+      <div className="inline-flex max-w-full gap-1 overflow-x-auto rounded-full bg-brand-surface/60 p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {tabs.map(({ id, label, icon }) => {
+          const active = activeTab === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onSelectTab(id)}
+              className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                active
+                  ? "bg-white text-brand-primary shadow-sm"
+                  : "text-brand-muted hover:bg-white/50 hover:text-brand-ink"
+              }`}
+              aria-current={active ? "page" : undefined}
+            >
+              <span className="shrink-0">{icon}</span>
+              {label}
+            </button>
+          );
+        })}
       </div>
-    </>
+    </nav>
   );
 }

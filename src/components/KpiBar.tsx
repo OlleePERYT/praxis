@@ -70,7 +70,7 @@ export function KpiBar({ result, baseline }: KpiBarProps) {
       : `${delta > 0 ? "+" : "−"}${currencyFormatter.format(Math.abs(delta))} € ggü. Vergleich`;
 
   return (
-    <div className="sticky top-[64px] z-30 mt-4">
+    <div className="sticky top-[128px] z-30 mt-4 md:top-[80px]">
       <div className="relative w-full overflow-hidden rounded-3xl border border-[var(--color-brand-border-soft)] bg-white/85 px-8 py-6 shadow-[var(--shadow-glow-md)] backdrop-blur-md">
         <div
           className="pointer-events-none absolute inset-0 rounded-3xl opacity-40"
@@ -127,7 +127,7 @@ export function KpiBar({ result, baseline }: KpiBarProps) {
             <MiniMetric label="Umsatz" value={formatEuro(result.revenue)} />
             <MiniMetric label="Kosten" value={formatEuro(result.totalCost)} />
             <MiniMetric
-              label="Personalkostenquote"
+              label="PK-Quote"
               value={`${percentFormatter.format(pkPct)} %`}
               valueClassName={pkClass}
             />
