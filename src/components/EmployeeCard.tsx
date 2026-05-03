@@ -138,7 +138,7 @@ export function EmployeeCard({
               onChange={(value) => updateEmployee("vacation", value)}
             />
             <StepSlider
-              label="Krankheitstage / Jahr"
+              label={"Krankheitstage /\u00A0Jahr"}
               value={employee.sick}
               min={0}
               max={30}
@@ -154,7 +154,7 @@ export function EmployeeCard({
               onChange={(value) => updateEmployee("training", value)}
             />
             <StepSlider
-              label="Weiterbildungskosten / Jahr"
+              label={"Weiterbildungskosten /\u00A0Jahr"}
               value={employee.trainingCost}
               min={0}
               max={10000}

@@ -125,7 +125,12 @@ export function StepSlider({
     <div className="mb-3 rounded-xl bg-brand-bg/50 px-4 py-3 transition-colors hover:bg-brand-bg/80">
       <div className="mb-2 flex items-baseline justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium text-brand-text">{label}</div>
+          <div
+            className="hyphens-auto text-pretty text-sm font-medium leading-snug text-brand-text"
+            lang="de"
+          >
+            {label}
+          </div>
           {hint ? (
             <div className="mt-0.5 text-xs text-brand-muted">{hint}</div>
           ) : null}
