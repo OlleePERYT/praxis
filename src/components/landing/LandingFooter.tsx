@@ -23,6 +23,12 @@ export default function LandingFooter() {
           >
             Datenschutz
           </Link>
+          <Link
+            href="/kontakt"
+            className="text-sm text-brand-muted transition-colors hover:text-brand-primary"
+          >
+            {"Kontakt & Support"}
+          </Link>
         </nav>
       </div>
     </footer>

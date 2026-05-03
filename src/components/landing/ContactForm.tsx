@@ -4,7 +4,13 @@ import { type FormEvent, useState } from "react";
 
 type SubmitStatus = "idle" | "loading" | "success" | "error";
 
-export default function ContactForm() {
+type ContactFormProps = {
+  /** Support-Seite (kompakt) vs. Landing „Jetzt anfragen“ */
+  variant?: "landing" | "support";
+};
+
+export default function ContactForm({ variant = "landing" }: ContactFormProps) {
+  const isSupport = variant === "support";
   const [status, setStatus] = useState<SubmitStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [name, setName] = useState("");
@@ -58,17 +64,33 @@ export default function ContactForm() {
   const inputClass =
     "w-full rounded-lg border border-brand-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-primary";
 
+  const idKontakt = isSupport ? undefined : "kontakt";
+  const outerClass = isSupport
+    ? ""
+    : "bg-brand-bg py-20";
+  const innerClass = isSupport
+    ? "mx-auto w-full max-w-xl"
+    : "mx-auto max-w-6xl px-4 md:px-6";
+
   return (
-    <div id="kontakt" className="bg-brand-bg py-20">
-      <div className="mx-auto max-w-6xl px-4 md:px-6">
+    <div id={idKontakt} className={outerClass}>
+      <div className={innerClass}>
         <h2 className="text-center text-2xl font-bold text-brand-ink">
-          Jetzt anfragen
+          {isSupport ? "Nachricht an den Support" : "Jetzt anfragen"}
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-center text-brand-text">
-          Wir richten alles ein. Sie müssen nur das Formular ausfüllen.
+          {isSupport
+            ? "Technische Fragen, Feedback oder Vertrags-Themen: Wir melden uns bei Ihnen."
+            : "Wir richten alles ein. Sie müssen nur das Formular ausfüllen."}
         </p>
 
-        <div className="mx-auto mt-10 max-w-xl rounded-xl border border-brand-surface bg-white p-8">
+        <div
+          className={
+            isSupport
+              ? "mx-auto mt-8 rounded-xl border border-brand-surface bg-white p-6 md:p-8"
+              : "mx-auto mt-10 max-w-xl rounded-xl border border-brand-surface bg-white p-8"
+          }
+        >
           {status === "success" ? (
             <p className="text-center text-lg font-medium text-green-700">
               Vielen Dank! Wir melden uns bald.
@@ -86,13 +108,13 @@ export default function ContactForm() {
 
               <div>
                 <label
-                  htmlFor="contact-name"
+                  htmlFor={isSupport ? "support-contact-name" : "contact-name"}
                   className="text-sm font-medium text-brand-text"
                 >
                   Name <span className="text-red-500">*</span>
                 </label>
                 <input
-                  id="contact-name"
+                  id={isSupport ? "support-contact-name" : "contact-name"}
                   name="name"
                   type="text"
                   autoComplete="name"
@@ -106,13 +128,15 @@ export default function ContactForm() {
 
               <div>
                 <label
-                  htmlFor="contact-praxisname"
+                  htmlFor={
+                    isSupport ? "support-contact-praxisname" : "contact-praxisname"
+                  }
                   className="text-sm font-medium text-brand-text"
                 >
                   Praxisname <span className="text-red-500">*</span>
                 </label>
                 <input
-                  id="contact-praxisname"
+                  id={isSupport ? "support-contact-praxisname" : "contact-praxisname"}
                   name="praxisname"
                   type="text"
                   autoComplete="organization"
@@ -126,13 +150,13 @@ export default function ContactForm() {
 
               <div>
                 <label
-                  htmlFor="contact-email"
+                  htmlFor={isSupport ? "support-contact-email" : "contact-email"}
                   className="text-sm font-medium text-brand-text"
                 >
                   E-Mail <span className="text-red-500">*</span>
                 </label>
                 <input
-                  id="contact-email"
+                  id={isSupport ? "support-contact-email" : "contact-email"}
                   name="email"
                   type="email"
                   autoComplete="email"
@@ -146,13 +170,13 @@ export default function ContactForm() {
 
               <div>
                 <label
-                  htmlFor="contact-message"
+                  htmlFor={isSupport ? "support-contact-message" : "contact-message"}
                   className="text-sm font-medium text-brand-text"
                 >
                   Nachricht <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                  id="contact-message"
+                  id={isSupport ? "support-contact-message" : "contact-message"}
                   name="message"
                   rows={5}
                   required
@@ -168,7 +192,7 @@ export default function ContactForm() {
                 disabled={status === "loading"}
                 className="w-full rounded-lg bg-brand-primary px-8 py-4 font-semibold text-white transition-colors hover:bg-brand-accent disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Jetzt anfragen →
+                {isSupport ? "Nachricht senden →" : "Jetzt anfragen →"}
               </button>
             </form>
           )}

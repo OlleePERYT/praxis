@@ -27,8 +27,8 @@ export function PracticeFooter() {
           >
             Datenschutz
           </Link>
-          <Link href="/hilfe" className="hover:text-brand-primary">
-            Hilfe
+          <Link href="/kontakt" className="hover:text-brand-primary">
+            {"Kontakt & Support"}
           </Link>
         </nav>
       </div>

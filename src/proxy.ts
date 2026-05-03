@@ -3,20 +3,16 @@ import type { NextAuthRequest } from "next-auth";
 import type { NextFetchEvent, NextMiddleware, NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { authConfig } from "@/auth.config";
+import { getSubdomainFromHost } from "@/lib/host";
 
 const { auth } = NextAuth(authConfig);
 
-function getSubdomain(hostHeader: string | null): string | null {
-  if (!hostHeader) return null;
-
-  const hostname = hostHeader.split(":")[0].toLowerCase();
-  const parts = hostname.split(".");
-
-  if (hostname === "localhost" || parts.length < 3) {
-    return null;
-  }
-
-  return parts[0] ?? null;
+function isLegalOrSupportPath(pathname: string): boolean {
+  return (
+    pathname.startsWith("/impressum") ||
+    pathname.startsWith("/datenschutz") ||
+    pathname.startsWith("/kontakt")
+  );
 }
 
 /**
@@ -53,7 +49,7 @@ const middlewareImpl = (req: NextAuthRequest) => {
   const { nextUrl } = req;
   const { pathname } = nextUrl;
 
-  const hostSubdomain = getSubdomain(req.headers.get("host"));
+  const hostSubdomain = getSubdomainFromHost(req.headers.get("host"));
 
   const isAuthApi = pathname.startsWith("/api/auth");
   const isLoginPage = pathname === "/login";
@@ -67,7 +63,8 @@ const middlewareImpl = (req: NextAuthRequest) => {
     !hostSubdomain &&
     (pathname === "/" ||
       pathname.startsWith("/impressum") ||
-      pathname.startsWith("/datenschutz"));
+      pathname.startsWith("/datenschutz") ||
+      pathname.startsWith("/kontakt"));
   const isContactApi = pathname.startsWith("/api/contact");
 
   if (isAuthApi || isLoginPage || isPublicAsset) {
@@ -77,6 +74,17 @@ const middlewareImpl = (req: NextAuthRequest) => {
   // Apex: eingeloggte Nutzer nicht auf die Verkaufsseite (/) schicken
   if (!hostSubdomain && pathname === "/" && req.auth?.user) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
+  // Subdomain: Impressum, Datenschutz, Kontakt/Support ohne Login (Pflichtlinks im Footer)
+  if (hostSubdomain && isLegalOrSupportPath(pathname)) {
+    const requestHeaders = new Headers(req.headers);
+    withPracticeHeader(req, requestHeaders, hostSubdomain);
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
   if (isMarketingPublic || isContactApi) {
