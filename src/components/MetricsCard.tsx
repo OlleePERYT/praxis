@@ -7,7 +7,6 @@ import type {
   RevenueConfigMix,
 } from "@/lib/engine";
 import Card from "./ui/Card";
-import Eyebrow from "./ui/Eyebrow";
 import GradientNumber from "./ui/GradientNumber";
 
 const pct1 = new Intl.NumberFormat("de-DE", {
@@ -101,8 +100,8 @@ export function MetricsCard({
 
   return (
     <Card variant="glow">
-      <Eyebrow>Kennzahlen</Eyebrow>
-      <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
+      <h3 className="mb-4 text-xl font-bold text-brand-ink">Kennzahlen</h3>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         <Tile
           label="Therapeut:innen-Stunden/Woche"
           value={

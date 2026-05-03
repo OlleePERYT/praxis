@@ -1,6 +1,5 @@
 "use client";
 
-import Eyebrow from "@/components/ui/Eyebrow";
 import GradientNumber from "@/components/ui/GradientNumber";
 import type { PraxisResult } from "@/lib/engine";
 
@@ -82,7 +81,9 @@ export function KpiBar({ result, baseline }: KpiBarProps) {
         <div className="relative z-10 flex flex-col gap-8 md:flex-row md:items-start md:justify-between md:gap-10">
           <div className="relative min-w-0 flex-1 md:max-w-[min(100%,28rem)]">
             <div className="flex flex-wrap items-start justify-between gap-2">
-              <Eyebrow>Praxisüberschuss</Eyebrow>
+              <p className="text-xs font-semibold uppercase tracking-wider text-brand-muted">
+                Praxisüberschuss
+              </p>
               {showDeltaPill ? (
                 <span
                   className={`shrink-0 rounded-full border px-2 py-1 text-xs font-semibold tabular-nums ${

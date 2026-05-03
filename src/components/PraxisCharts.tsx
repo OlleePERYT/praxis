@@ -85,13 +85,11 @@ function PieLegend({ data }: { data: Slice[] }) {
 }
 
 function PieBlock({
-  eyebrow,
-  description,
+  title,
   data,
   emptyMessage,
 }: {
-  eyebrow: string;
-  description?: string;
+  title: string;
   data: Slice[];
   emptyMessage: string;
 }) {
@@ -100,14 +98,9 @@ function PieBlock({
 
   return (
     <div className="rounded-2xl bg-brand-bg/40 p-4">
-      <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-brand-muted">
-        {eyebrow}
+      <p className="mb-3 text-sm font-semibold leading-snug text-brand-ink">
+        {title}
       </p>
-      {description ? (
-        <p className="mb-3 text-xs text-brand-muted">{description}</p>
-      ) : (
-        <div className="mb-3" />
-      )}
       <div style={{ height: 280 }}>
         {!hasData ? (
           <p className="flex h-full items-center justify-center text-center text-sm text-brand-muted">
@@ -192,14 +185,12 @@ export function PraxisCharts({ result }: PraxisChartsProps) {
       </h3>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <PieBlock
-          eyebrow="Kostenverteilung"
-          description="Personal je Mitarbeiter:in; übrige Position = Miete + Sachkosten."
+          title="Kostenverteilung — Personal je Mitarbeiter:in; übrige Scheibe Miete und Sachkosten."
           data={costData}
           emptyMessage="Keine Kostenposten mit positivem Betrag."
         />
         <PieBlock
-          eyebrow="Erlöse nach Mitarbeiter:in"
-          description="Anteilig nach effektiven Stunden (ohne Untermiete)."
+          title="Therapie-Erlöse je Mitarbeiter:in — anteilig nach effektiven Stunden (ohne Untermiete)."
           data={revSlices}
           emptyMessage="Keine Therapie-Erlöse (keine effektiven Stunden)."
         />
