@@ -2,16 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ComparisonTable } from "./ComparisonTable";
-import { EmployeeCard } from "./EmployeeCard";
+import { DashboardTabs } from "./DashboardTabs";
 import { KpiBar } from "./KpiBar";
-import { MetricsCard } from "./MetricsCard";
-import { PraxisCharts } from "./PraxisCharts";
-import { ProfitLoss } from "./ProfitLoss";
-import { RevenuePanel } from "./RevenuePanel";
-import { SachkostenInner } from "./SachkostenInner";
 import { ScenarioPanel } from "./ScenarioPanel";
-import { StepSlider } from "./StepSlider";
-import Card from "./ui/Card";
+import { AuswertungTab } from "./tabs/AuswertungTab";
+import { CockpitTab } from "./tabs/CockpitTab";
+import { VergleichTab } from "./tabs/VergleichTab";
 import {
   buildPracticeConfigDocument,
   defaultEmployee,
@@ -376,205 +372,106 @@ export function SimulatorClient({
     setExpanded(normalized.employees.map(() => false));
   };
 
-  const euro0 = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
-
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <KpiBar result={result} baseline={baseline} />
 
-      <main className="w-full space-y-6 py-6">
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="mb-0 text-2xl font-bold text-brand-primary">
-                Mitarbeiter
-              </h2>
-              {visibleIndices.length > 0 ? (
-                <button
-                  type="button"
-                  onClick={toggleAll}
-                  className="rounded-md border border-brand-surface px-3 py-1.5 text-xs font-medium text-brand-primary"
-                >
-                  {anyExpanded ? "Alle einklappen" : "Alle aufklappen"}
-                </button>
-              ) : null}
-            </div>
-            {config.employees
-              .map((employee, index) => ({ employee, index }))
-              .filter(({ employee }) => employee.hours > 0)
-              .map(({ employee, index }) => (
-                <EmployeeCard
-                  key={`emp-${index}`}
-                  employee={employee}
-                  index={index}
-                  isExpanded={expanded[index] ?? false}
-                  onToggleExpand={() => toggleExpanded(index)}
-                  onChange={updateEmployee}
-                  onRemove={removeEmployee}
-                />
-              ))}
-            <button
-              type="button"
-              onClick={addEmployee}
-              disabled={config.employees.length >= SOFT_LIMIT}
-              className="w-full cursor-pointer rounded-2xl border border-dashed border-brand-primary/30 bg-brand-bg/30 p-6 text-center font-semibold text-brand-primary transition-colors hover:border-brand-primary/60 hover:bg-brand-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {config.employees.length >= SOFT_LIMIT
-                ? `Maximum ${SOFT_LIMIT} Therapeut:innen erreicht`
-                : "+ Mitarbeiter:in hinzufügen"}
-            </button>
-            <p className="rounded-lg border border-brand-surface bg-brand-bg px-3 py-2 text-sm font-medium text-brand-primary">
-              Σ Wochenstunden: {euro0.format(sumWeeklyHours)} Std./Wo. | Σ Effektiv:{" "}
-              {euro0.format(sumEffHours)} Std./Jahr | Σ Kosten:{" "}
-              {euro0.format(result.personalCost)} €
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <h2 className="mb-0 text-2xl font-bold text-brand-primary">Erlöse</h2>
-            <RevenuePanel config={config.revenue} onChange={updateRevenue} />
-            <Card variant="default" contentClassName="p-6">
-              <h3 className="mb-4 text-xl font-bold text-brand-ink">
-                Sonstige Erträge
-              </h3>
-              <div className="space-y-3">
-                <StepSlider
-                  label="Untermiete pro Monat"
-                  value={config.untermiete}
-                  min={0}
-                  max={2000}
-                  step={50}
-                  unit="€"
-                  onChange={(untermiete) =>
-                    setConfig((prev) => ({ ...prev, untermiete }))
-                  }
-                />
-                <StepSlider
-                  label="Rohertrag Handelsware / Jahr"
-                  value={config.handelswareJahr}
-                  min={0}
-                  max={20000}
-                  step={100}
-                  unit="€"
-                  onChange={(handelswareJahr) =>
-                    setConfig((prev) => ({ ...prev, handelswareJahr }))
-                  }
-                />
-              </div>
-            </Card>
-            <h2 className="mb-0 text-2xl font-bold text-brand-primary">Kosten</h2>
-
-            <Card variant="default" contentClassName="p-6">
-              <h3 className="mb-4 text-xl font-bold text-brand-ink">
-                Räume &amp; Sachkosten
-              </h3>
-
-              <StepSlider
-                label="Miete pro Monat"
-                value={config.mieteMonat}
-                min={0}
-                max={5000}
-                step={50}
-                unit="€"
-                onChange={(mieteMonat) =>
-                  setConfig((prev) => ({ ...prev, mieteMonat }))
-                }
-              />
-
-              <SachkostenInner
-                config={config.sachkosten}
-                onChange={updateSachkosten}
-              />
-            </Card>
-
-            <Card variant="default" contentClassName="p-6" className="mt-6">
-              <h3 className="mb-4 text-xl font-bold text-brand-ink">
-                Geschäftsführer-Gehalt
-              </h3>
-
-              <StepSlider
-                label="GF-Gehalt pro Monat (nur GmbH)"
-                value={config.gfGehaltMonat}
-                min={0}
-                max={10000}
-                step={100}
-                unit="€"
-                onChange={(gfGehaltMonat) =>
-                  setConfig((prev) => ({ ...prev, gfGehaltMonat }))
-                }
-              />
-            </Card>
-          </div>
-        </div>
-
-        <ProfitLoss
-          result={result}
-          employees={config.employees}
-          sachkosten={config.sachkosten}
-        />
-
-        <MetricsCard
-          result={result}
-          sumWeeklyHours={sumWeeklyHours}
-          revenueConfig={config.revenue}
-        />
-
-        <PraxisCharts result={result} />
-
-        {config.refRevenue > 0 ? (
-          <ComparisonTable
+      <DashboardTabs
+        cockpit={
+          <CockpitTab
+            softLimit={SOFT_LIMIT}
+            config={config}
             result={result}
-            refRevenue={config.refRevenue}
-            refCosts={config.refCosts}
-            refSurplus={config.refSurplus}
-            refLabel={config.refLabel}
+            expanded={expanded}
+            visibleIndices={visibleIndices}
+            anyExpanded={anyExpanded}
+            toggleAll={toggleAll}
+            toggleExpanded={toggleExpanded}
+            updateEmployee={updateEmployee}
+            removeEmployee={removeEmployee}
+            addEmployee={addEmployee}
+            sumWeeklyHours={sumWeeklyHours}
+            sumEffHours={sumEffHours}
+            updateRevenue={updateRevenue}
+            updateSachkosten={updateSachkosten}
+            setUntermiete={(untermiete) =>
+              setConfig((prev) => ({ ...prev, untermiete }))
+            }
+            setHandelswareJahr={(handelswareJahr) =>
+              setConfig((prev) => ({ ...prev, handelswareJahr }))
+            }
+            setMieteMonat={(mieteMonat) =>
+              setConfig((prev) => ({ ...prev, mieteMonat }))
+            }
+            setGfGehaltMonat={(gfGehaltMonat) =>
+              setConfig((prev) => ({ ...prev, gfGehaltMonat }))
+            }
           />
-        ) : null}
-
-        <ScenarioPanel
-          currentConfig={config}
-          onLoad={loadScenario}
-          baselineScenarioInlineRef={scenarioInlineRef}
-          workspaceError={workspaceError}
-          rememberBusy={rememberBusy}
-          baseline={
-            baseline
-              ? {
-                  state: "active",
-                  savedLabel: formatBaselineLabel(baseline.savedAt),
-                  onReset: resetToBaseline,
-                  onUpdate: rememberComparisonPoint,
-                  onClear: clearBaseline,
-                  baselineScenario: {
-                    inlineOpen: savingScenario,
-                    scenarioName,
-                    onScenarioNameChange: setScenarioName,
-                    onToggleInline: () => {
-                      setScenarioSaveSuccessFlash(false);
-                      if (successFlashTimeoutRef.current) {
-                        clearTimeout(successFlashTimeoutRef.current);
-                        successFlashTimeoutRef.current = null;
-                      }
-                      setSavingScenario((open) => {
-                        if (open) {
-                          setScenarioName("");
-                          setSaveError(null);
-                          return false;
-                        }
-                        setSaveError(null);
-                        return true;
-                      });
-                    },
-                    onConfirmSave: handleSaveBaselineScenario,
-                    pending: scenarioSavePending,
-                    successFlash: scenarioSaveSuccessFlash,
-                    error: saveError,
-                  },
-                }
-              : { state: "empty", onRemember: rememberComparisonPoint }
-          }
-        />
-      </main>
+        }
+        auswertung={<AuswertungTab config={config} result={result} />}
+        vergleich={
+          <VergleichTab
+            showEmptyHint={baseline === null && config.refRevenue <= 0}
+            rememberBusy={rememberBusy}
+            onRememberComparisonPoint={rememberComparisonPoint}
+            comparisonTable={
+              config.refRevenue > 0 ? (
+                <ComparisonTable
+                  result={result}
+                  refRevenue={config.refRevenue}
+                  refCosts={config.refCosts}
+                  refSurplus={config.refSurplus}
+                  refLabel={config.refLabel}
+                />
+              ) : null
+            }
+          >
+            <ScenarioPanel
+              currentConfig={config}
+              onLoad={loadScenario}
+              baselineScenarioInlineRef={scenarioInlineRef}
+              workspaceError={workspaceError}
+              rememberBusy={rememberBusy}
+              baseline={
+                baseline
+                  ? {
+                      state: "active",
+                      savedLabel: formatBaselineLabel(baseline.savedAt),
+                      onReset: resetToBaseline,
+                      onUpdate: rememberComparisonPoint,
+                      onClear: clearBaseline,
+                      baselineScenario: {
+                        inlineOpen: savingScenario,
+                        scenarioName,
+                        onScenarioNameChange: setScenarioName,
+                        onToggleInline: () => {
+                          setScenarioSaveSuccessFlash(false);
+                          if (successFlashTimeoutRef.current) {
+                            clearTimeout(successFlashTimeoutRef.current);
+                            successFlashTimeoutRef.current = null;
+                          }
+                          setSavingScenario((open) => {
+                            if (open) {
+                              setScenarioName("");
+                              setSaveError(null);
+                              return false;
+                            }
+                            setSaveError(null);
+                            return true;
+                          });
+                        },
+                        onConfirmSave: handleSaveBaselineScenario,
+                        pending: scenarioSavePending,
+                        successFlash: scenarioSaveSuccessFlash,
+                        error: saveError,
+                      },
+                    }
+                  : { state: "empty", onRemember: rememberComparisonPoint }
+              }
+            />
+          </VergleichTab>
+        }
+      />
     </div>
   );
 }
