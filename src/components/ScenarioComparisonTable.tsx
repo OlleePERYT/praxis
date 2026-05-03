@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useMemo, useState } from "react";
 import GradientNumber from "@/components/ui/GradientNumber";
 import Card from "@/components/ui/Card";
 import Eyebrow from "@/components/ui/Eyebrow";
@@ -12,6 +13,23 @@ export type ScenarioComparisonTableKpis = {
   personalCostRatio: number;
   totalEffHours: number;
   gkvAnteilProzent: number | null;
+  revenueDetails: {
+    revenueTherapy: number;
+    untermieteJahr: number;
+    handelswareJahr: number;
+  };
+  costDetails: {
+    personalCost: number;
+    sachkostenJahr: number;
+    mieteJahr: number;
+    trainingCostTotal: number;
+  };
+  personalDetails: Array<{
+    name: string;
+    cost: number;
+    effHours: number;
+    db: number;
+  }>;
 };
 
 export type ScenarioComparisonTableRow = {
@@ -37,6 +55,38 @@ function formatEuro(value: number): string {
   return `${euro0.format(value)} €`;
 }
 
+function gfGehaltFromKpis(k: ScenarioComparisonTableKpis): number {
+  const sumMa = k.personalDetails.reduce((a, p) => a + p.cost, 0);
+  return Math.max(0, k.costDetails.personalCost - sumMa);
+}
+
+function personalCostByName(
+  kpis: ScenarioComparisonTableKpis,
+  name: string,
+): number | null {
+  const row = kpis.personalDetails.find((p) => p.name === name);
+  return row ? row.cost : null;
+}
+
+function Chevron({ expanded }: { expanded: boolean }) {
+  return (
+    <svg
+      width={14}
+      height={14}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`shrink-0 text-brand-muted transition-transform duration-200 ease-out ${expanded ? "rotate-90" : ""}`}
+      aria-hidden
+    >
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+}
+
 function DeltaEuro({
   currentVal,
   val,
@@ -60,6 +110,21 @@ function DeltaEuro({
       ? "text-xs font-semibold text-red-600"
       : "text-xs text-brand-muted";
   return <span className={cls}>{label}</span>;
+}
+
+function DeltaEuroOptional({
+  currentVal,
+  val,
+  inverted,
+}: {
+  currentVal: number | null;
+  val: number | null;
+  inverted?: boolean;
+}) {
+  if (currentVal === null || val === null) {
+    return <span className="text-xs text-brand-muted">—</span>;
+  }
+  return <DeltaEuro currentVal={currentVal} val={val} inverted={inverted} />;
 }
 
 function DeltaPctPoints({
@@ -124,6 +189,14 @@ function renderDelta(
       return <DeltaEuro currentVal={ck.ueberschuss} val={vk.ueberschuss} />;
     case "revenue":
       return <DeltaEuro currentVal={ck.revenue} val={vk.revenue} />;
+    case "personalAgg":
+      return (
+        <DeltaEuro
+          currentVal={ck.costDetails.personalCost}
+          val={vk.costDetails.personalCost}
+          inverted
+        />
+      );
     case "totalCost":
       return <DeltaEuro currentVal={ck.totalCost} val={vk.totalCost} inverted />;
     case "personalCostRatio":
@@ -145,6 +218,8 @@ function formatCell(rowKey: string, kpis: ScenarioComparisonTableKpis): string {
       return formatEuro(kpis.ueberschuss);
     case "revenue":
       return formatEuro(kpis.revenue);
+    case "personalAgg":
+      return formatEuro(kpis.costDetails.personalCost);
     case "totalCost":
       return formatEuro(kpis.totalCost);
     case "personalCostRatio":
@@ -160,12 +235,42 @@ function formatCell(rowKey: string, kpis: ScenarioComparisonTableKpis): string {
   }
 }
 
+const subFirstCol =
+  "sticky left-0 z-[1] border-l-2 border-brand-primary/15 bg-brand-bg/30 py-2 pr-4 pl-8 max-md:pl-4 md:bg-brand-bg/30";
+const subTr = "bg-brand-bg/30 transition-colors duration-200 ease-out";
+
 export function ScenarioComparisonTable({
   scenarios,
   onGoToCockpit,
 }: ScenarioComparisonTableProps) {
   const current = scenarios.find((s) => s.isCurrent);
   const onlyCurrent = scenarios.length <= 1;
+
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(() => new Set());
+
+  const toggleExpanded = (key: string) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const maNamesSorted = useMemo(() => {
+    const names = new Set<string>();
+    for (const s of scenarios) {
+      for (const p of s.kpis.personalDetails) {
+        names.add(p.name);
+      }
+    }
+    return [...names].sort((a, b) => a.localeCompare(b, "de"));
+  }, [scenarios]);
+
+  const showUntermiete = scenarios.some((s) => s.kpis.revenueDetails.untermieteJahr > 0);
+  const showHandelsware = scenarios.some((s) => s.kpis.revenueDetails.handelswareJahr > 0);
+  const showTraining = scenarios.some((s) => s.kpis.costDetails.trainingCostTotal > 0);
+  const showGF = scenarios.some((s) => gfGehaltFromKpis(s.kpis) > 0.01);
 
   if (onlyCurrent || !current) {
     return (
@@ -191,25 +296,145 @@ export function ScenarioComparisonTable({
     );
   }
 
+  const baselineRow = current;
+
   const showGkvRow = scenarios.some((s) => s.kpis.gkvAnteilProzent !== null);
 
-  const rowKeys = [
-    "ueberschuss",
-    "revenue",
-    "totalCost",
-    "personalCostRatio",
-    "totalEffHours",
-    ...(showGkvRow ? (["gkv"] as const) : []),
-  ] as const;
+  const expandableHeaderTd =
+    "sticky left-0 z-[1] cursor-pointer bg-white py-3 pr-4 hover:bg-brand-bg/50 group-hover:bg-brand-bg/50 max-md:bg-white md:static md:z-auto md:bg-transparent md:hover:bg-brand-bg/50";
 
-  const rowLabels: Record<(typeof rowKeys)[number], string> = {
-    ueberschuss: "Praxisüberschuss",
-    revenue: "Umsatz",
-    totalCost: "Kosten",
-    personalCostRatio: "Personalkostenquote",
-    totalEffHours: "Effektive Stunden",
-    gkv: "GKV-Anteil",
-  };
+  function renderPrimaryCell(rowKey: string, s: ScenarioComparisonTableRow): ReactNode {
+    const display = formatCell(rowKey, s.kpis);
+    const isUeberschussRow = rowKey === "ueberschuss";
+
+    if (isUeberschussRow && s.isCurrent) {
+      return (
+        <GradientNumber
+          size="md"
+          tone={s.kpis.ueberschuss >= 0 ? "positive" : "negative"}
+        >
+          {display}
+        </GradientNumber>
+      );
+    }
+
+    return (
+      <div
+        className={`text-base tabular-nums text-brand-ink ${isUeberschussRow ? "font-bold" : ""}`}
+      >
+        {display}
+      </div>
+    );
+  }
+
+  function renderSimpleRow(rowKey: string, label: string) {
+    return (
+      <tr
+        key={rowKey}
+        className="group border-b border-[var(--color-brand-border-soft)] transition-colors hover:bg-brand-bg/40"
+      >
+        <td
+          className={`sticky left-0 z-[1] bg-white py-3 pr-4 text-sm font-medium text-brand-text group-hover:bg-brand-bg/40 max-md:bg-white md:static md:z-auto`}
+        >
+          {label}
+        </td>
+        {scenarios.map((s) => (
+          <td
+            key={`${rowKey}-${s.id}`}
+            className="min-w-[130px] py-3 text-right align-top tabular-nums"
+          >
+            {renderPrimaryCell(rowKey, s)}
+            {!s.isCurrent ? (
+              <div className="mt-1 flex justify-end">{renderDelta(rowKey, baselineRow.kpis, s.kpis)}</div>
+            ) : null}
+          </td>
+        ))}
+      </tr>
+    );
+  }
+
+  function renderExpandableHeader(
+    expandKey: string,
+    label: string,
+    rowKey: string,
+  ) {
+    const expanded = expandedRows.has(expandKey);
+    return (
+      <tr
+        key={`hdr-${expandKey}`}
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        onClick={() => toggleExpanded(expandKey)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggleExpanded(expandKey);
+          }
+        }}
+        className="group cursor-pointer border-b border-[var(--color-brand-border-soft)] hover:bg-brand-bg/50"
+      >
+        <td className={expandableHeaderTd}>
+          <span className="inline-flex items-center gap-2 text-sm font-medium text-brand-text">
+            <Chevron expanded={expanded} />
+            {label}
+          </span>
+        </td>
+        {scenarios.map((s) => (
+          <td
+            key={`${expandKey}-${rowKey}-${s.id}`}
+            className="min-w-[130px] py-3 text-right align-top tabular-nums"
+          >
+            {renderPrimaryCell(rowKey, s)}
+            {!s.isCurrent ? (
+              <div className="mt-1 flex justify-end">{renderDelta(rowKey, baselineRow.kpis, s.kpis)}</div>
+            ) : null}
+          </td>
+        ))}
+      </tr>
+    );
+  }
+
+  function renderSubEuroRow(
+    subKey: string,
+    label: string,
+    getVal: (k: ScenarioComparisonTableKpis) => number | null,
+    inverted?: boolean,
+    emphasize?: boolean,
+  ) {
+    return (
+      <tr key={subKey} className={`${subTr} border-b border-[var(--color-brand-border-soft)]`}>
+        <td className={subFirstCol}>
+          <span className={emphasize ? "font-semibold text-brand-text" : ""}>{label}</span>
+        </td>
+        {scenarios.map((s) => {
+          const v = getVal(s.kpis);
+          const cv = getVal(baselineRow.kpis);
+          return (
+            <td
+              key={`${subKey}-${s.id}`}
+              className="min-w-[130px] bg-brand-bg/30 py-2 text-right align-top tabular-nums"
+            >
+              <span
+                className={`text-sm tabular-nums text-brand-text ${emphasize ? "font-semibold" : ""}`}
+              >
+                {v === null ? "—" : formatEuro(v)}
+              </span>
+              {!s.isCurrent ? (
+                <div className="mt-1 flex justify-end">
+                  <DeltaEuroOptional currentVal={cv} val={v} inverted={inverted} />
+                </div>
+              ) : null}
+            </td>
+          );
+        })}
+      </tr>
+    );
+  }
+
+  const revenueSubsExpanded = expandedRows.has("umsatz");
+  const personalSubsExpanded = expandedRows.has("personal");
+  const kostenSubsExpanded = expandedRows.has("kosten");
 
   return (
     <Card variant="default" contentClassName="p-6">
@@ -244,51 +469,94 @@ export function ScenarioComparisonTable({
             </tr>
           </thead>
           <tbody>
-            {rowKeys.map((rowKey) => (
-              <tr
-                key={rowKey}
-                className="group border-b border-[var(--color-brand-border-soft)] transition-colors hover:bg-brand-bg/40"
-              >
-                <td className="sticky left-0 z-[1] bg-white py-3 pr-4 text-sm font-medium text-brand-text group-hover:bg-brand-bg/40 max-md:bg-white md:static md:z-auto">
-                  {rowLabels[rowKey]}
-                </td>
-                {scenarios.map((s) => {
-                  const display = formatCell(rowKey, s.kpis);
-                  const isUeberschussRow = rowKey === "ueberschuss";
+            {renderSimpleRow("ueberschuss", "Praxisüberschuss")}
+            {renderExpandableHeader("umsatz", "Umsatz", "revenue")}
+            {revenueSubsExpanded ? (
+              <>
+                {renderSubEuroRow(
+                  "sub-therapy",
+                  "Therapie-Erlöse",
+                  (k) => k.revenueDetails.revenueTherapy,
+                  false,
+                )}
+                {showUntermiete
+                  ? renderSubEuroRow(
+                      "sub-untermiete",
+                      "Untermiete (Jahr)",
+                      (k) => k.revenueDetails.untermieteJahr,
+                      false,
+                    )
+                  : null}
+                {showHandelsware
+                  ? renderSubEuroRow(
+                      "sub-handel",
+                      "Handelsware (Jahr)",
+                      (k) => k.revenueDetails.handelswareJahr,
+                      false,
+                    )
+                  : null}
+              </>
+            ) : null}
 
-                  const primary: ReactNode =
-                    isUeberschussRow && s.isCurrent ? (
-                      <GradientNumber
-                        size="md"
-                        tone={s.kpis.ueberschuss >= 0 ? "positive" : "negative"}
-                      >
-                        {display}
-                      </GradientNumber>
-                    ) : (
-                      <div
-                        className={`text-base tabular-nums text-brand-ink ${isUeberschussRow ? "font-bold" : ""}`}
-                      >
-                        {display}
-                      </div>
-                    );
+            {renderExpandableHeader("personal", "Personal", "personalAgg")}
+            {personalSubsExpanded ? (
+              <>
+                {maNamesSorted.map((maName) =>
+                  renderSubEuroRow(
+                    `sub-ma-${maName}`,
+                    maName,
+                    (k) => personalCostByName(k, maName),
+                    true,
+                  ),
+                )}
+                {showGF
+                  ? renderSubEuroRow("sub-gf", "GF-Gehalt", (k) => gfGehaltFromKpis(k), true)
+                  : null}
+                {renderSubEuroRow(
+                  "sub-personal-sum",
+                  "Personalkosten gesamt",
+                  (k) => k.costDetails.personalCost,
+                  true,
+                  true,
+                )}
+              </>
+            ) : null}
 
-                  const deltaEl =
-                    !s.isCurrent ? renderDelta(rowKey, current.kpis, s.kpis) : null;
+            {renderSimpleRow("personalCostRatio", "Personalkostenquote")}
+            {renderSimpleRow("totalEffHours", "Effektive Stunden")}
+            {renderExpandableHeader("kosten", "Kosten", "totalCost")}
+            {kostenSubsExpanded ? (
+              <>
+                {renderSubEuroRow(
+                  "sub-k-pers",
+                  "Personalkosten gesamt",
+                  (k) => k.costDetails.personalCost,
+                  true,
+                )}
+                {renderSubEuroRow(
+                  "sub-k-sach",
+                  "Sachkosten",
+                  (k) => k.costDetails.sachkostenJahr,
+                  true,
+                )}
+                {renderSubEuroRow(
+                  "sub-k-miete",
+                  "Miete (Jahr)",
+                  (k) => k.costDetails.mieteJahr,
+                  true,
+                )}
+                {showTraining
+                  ? renderSubEuroRow(
+                      "sub-k-wb",
+                      "Weiterbildungskosten gesamt",
+                      (k) => k.costDetails.trainingCostTotal,
+                      true,
+                    )
+                  : null}
+              </>
+            ) : null}
 
-                  return (
-                    <td
-                      key={`${rowKey}-${s.id}`}
-                      className="min-w-[130px] py-3 text-right align-top tabular-nums"
-                    >
-                      {primary}
-                      {!s.isCurrent ? (
-                        <div className="mt-1 flex justify-end">{deltaEl}</div>
-                      ) : null}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+            {showGkvRow ? renderSimpleRow("gkv", "GKV-Anteil") : null}
           </tbody>
         </table>
       </div>

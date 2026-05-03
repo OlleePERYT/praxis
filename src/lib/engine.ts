@@ -255,6 +255,23 @@ export function computeScenarioKpis(config: PraxisConfig): {
   personalCostRatio: number;
   totalEffHours: number;
   gkvAnteilProzent: number | null;
+  revenueDetails: {
+    revenueTherapy: number;
+    untermieteJahr: number;
+    handelswareJahr: number;
+  };
+  costDetails: {
+    personalCost: number;
+    sachkostenJahr: number;
+    mieteJahr: number;
+    trainingCostTotal: number;
+  };
+  personalDetails: Array<{
+    name: string;
+    cost: number;
+    effHours: number;
+    db: number;
+  }>;
 } {
   const r = calculatePraxis(config);
   const totalEffHours = r.employeeDetails.reduce(
@@ -266,6 +283,28 @@ export function computeScenarioKpis(config: PraxisConfig): {
       ? Math.min(100, Math.max(0, config.revenue.gkvPct))
       : null;
 
+  const personalDetails: Array<{
+    name: string;
+    cost: number;
+    effHours: number;
+    db: number;
+  }> = [];
+
+  config.employees.forEach((employee, index) => {
+    if (employee.hours <= 0) return;
+    const d = r.employeeDetails[index];
+    if (!d) return;
+    const maRevShare =
+      totalEffHours > 0 ? r.revenueTherapy * (d.effHours / totalEffHours) : 0;
+    const db = maRevShare - d.cost - employee.trainingCost;
+    personalDetails.push({
+      name: employee.name.trim() || `Therapeut:in ${index + 1}`,
+      cost: d.cost,
+      effHours: d.effHours,
+      db,
+    });
+  });
+
   return {
     ueberschuss: r.ueberschuss,
     revenue: r.revenue,
@@ -273,5 +312,17 @@ export function computeScenarioKpis(config: PraxisConfig): {
     personalCostRatio: r.personalCostRatio,
     totalEffHours,
     gkvAnteilProzent,
+    revenueDetails: {
+      revenueTherapy: r.revenueTherapy,
+      untermieteJahr: r.untermieteJahr,
+      handelswareJahr: r.handelswareJahr,
+    },
+    costDetails: {
+      personalCost: r.personalCost,
+      sachkostenJahr: r.sachkostenJahr,
+      mieteJahr: r.mieteJahr,
+      trainingCostTotal: r.trainingCostTotal,
+    },
+    personalDetails,
   };
 }
