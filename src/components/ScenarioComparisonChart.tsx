@@ -92,8 +92,7 @@ export function ScenarioComparisonChart({
     );
   }
 
-  const sorted = [...scenarios].sort((a, b) => b.ueberschuss - a.ueberschuss);
-  const chartData = sorted.map((row) => ({
+  const chartData = scenarios.map((row) => ({
     ...row,
     displayName: row.isCurrent ? `${row.name} (Aktuell)` : row.name,
   }));
@@ -107,7 +106,7 @@ export function ScenarioComparisonChart({
         Praxisüberschuss im Vergleich
       </h3>
       <p className="mb-4 text-xs text-brand-muted">
-        Sortiert nach Praxisüberschuss. Aktueller Stand markiert.
+        Gleiche Reihenfolge wie die Tabelle (Aktuell zuerst). Spalten gespeicherter Szenarien können Sie dort tauschen.
       </p>
       <div style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">

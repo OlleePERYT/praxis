@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ScenarioComparisonChart } from "@/components/ScenarioComparisonChart";
 import type { ScenarioComparisonTableRow } from "@/components/ScenarioComparisonTable";
 import { ScenarioComparisonTable } from "@/components/ScenarioComparisonTable";
@@ -33,15 +33,18 @@ export function VergleichTab({
   rememberBusy,
   onRememberComparisonPoint,
 }: VergleichTabProps) {
-  const comparisonScenarios: ScenarioComparisonTableRow[] = useMemo(() => {
-    const currentRow: ScenarioComparisonTableRow = {
+  const currentRow: ScenarioComparisonTableRow = useMemo(
+    () => ({
       id: "current",
       name: "Aktuell",
       isCurrent: true,
       kpis: computeScenarioKpis(currentConfig),
-    };
+    }),
+    [currentConfig],
+  );
 
-    const rest = savedScenarios.flatMap((row) => {
+  const savedRows = useMemo(() => {
+    return savedScenarios.flatMap((row) => {
       try {
         const raw = JSON.parse(row.data) as unknown;
         const cfg = normalizePraxisConfig(raw);
@@ -56,9 +59,48 @@ export function VergleichTab({
         return [];
       }
     });
+  }, [savedScenarios]);
 
-    return [currentRow, ...rest];
-  }, [currentConfig, savedScenarios]);
+  /** Explizite Spaltenreihenfolge nur für gespeicherte Szenarien (IDs). „Aktuell“ bleibt immer erste Datenspalte. */
+  const [savedColumnOrder, setSavedColumnOrder] = useState<string[]>([]);
+
+  const normalizedSavedIds = useMemo(() => savedRows.map((r) => r.id), [savedRows]);
+
+  const effectiveSavedIds = useMemo(() => {
+    const ordered = savedColumnOrder.filter((id) => normalizedSavedIds.includes(id));
+    const missing = normalizedSavedIds.filter((id) => !ordered.includes(id));
+    return [...ordered, ...missing];
+  }, [normalizedSavedIds, savedColumnOrder]);
+
+  const comparisonScenarios = useMemo(() => {
+    const byId = new Map(savedRows.map((r) => [r.id, r]));
+    const orderedSaved = effectiveSavedIds
+      .map((id) => byId.get(id))
+      .filter((r): r is ScenarioComparisonTableRow => r !== undefined);
+    return [currentRow, ...orderedSaved];
+  }, [currentRow, savedRows, effectiveSavedIds]);
+
+  const moveSavedScenarioColumn = useCallback(
+    (scenarioId: string, direction: "left" | "right") => {
+      setSavedColumnOrder((prev) => {
+        const ids = savedRows.map((r) => r.id);
+        let order = prev.filter((id) => ids.includes(id));
+        for (const id of ids) {
+          if (!order.includes(id)) order.push(id);
+        }
+        const idx = order.indexOf(scenarioId);
+        if (idx < 0) return order;
+        const next = [...order];
+        if (direction === "left" && idx > 0) {
+          [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+        } else if (direction === "right" && idx < next.length - 1) {
+          [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+        }
+        return next;
+      });
+    },
+    [savedRows],
+  );
 
   const chartRows = useMemo(
     () =>
@@ -74,7 +116,13 @@ export function VergleichTab({
   return (
     <div className="space-y-6">
       <ScenarioComparisonChart scenarios={chartRows} onGoToCockpit={onGoToCockpit} />
-      <ScenarioComparisonTable scenarios={comparisonScenarios} onGoToCockpit={onGoToCockpit} />
+      <ScenarioComparisonTable
+        scenarios={comparisonScenarios}
+        onGoToCockpit={onGoToCockpit}
+        onReorderScenario={
+          savedRows.length > 1 ? moveSavedScenarioColumn : undefined
+        }
+      />
 
       {showEmptyHint ? (
         <Card variant="default" contentClassName="p-6">

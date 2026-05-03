@@ -42,6 +42,8 @@ export type ScenarioComparisonTableRow = {
 type ScenarioComparisonTableProps = {
   scenarios: ScenarioComparisonTableRow[];
   onGoToCockpit?: () => void;
+  /** Nur gespeicherte Szenario-Spalten (nicht „Aktuell“) verschieben; „left“ tauscht mit der Spalte links (nie über Aktuell). */
+  onReorderScenario?: (scenarioId: string, direction: "left" | "right") => void;
 };
 
 const euro0 = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
@@ -239,9 +241,52 @@ const subFirstCol =
   "sticky left-0 z-[1] border-l-2 border-brand-primary/15 bg-brand-bg/30 py-2 pr-4 pl-8 max-md:pl-4 md:bg-brand-bg/30";
 const subTr = "bg-brand-bg/30 transition-colors duration-200 ease-out";
 
+function ColumnShiftButtons({
+  scenarioId,
+  savedIndex,
+  savedCount,
+  onReorder,
+}: {
+  scenarioId: string;
+  savedIndex: number;
+  savedCount: number;
+  onReorder: (scenarioId: string, direction: "left" | "right") => void;
+}) {
+  const canLeft = savedIndex > 0;
+  const canRight = savedIndex < savedCount - 1;
+  const btnClass =
+    "inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded border border-[var(--color-brand-border-soft)] bg-white text-xs font-semibold text-brand-muted transition hover:border-brand-primary/40 hover:bg-brand-bg/40 hover:text-brand-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[var(--color-brand-border-soft)] disabled:hover:bg-white disabled:hover:text-brand-muted";
+
+  return (
+    <div className="mt-1.5 flex justify-end gap-1">
+      <button
+        type="button"
+        className={btnClass}
+        disabled={!canLeft}
+        aria-label="Szenario-Spalte nach links verschieben"
+        title="Nach links"
+        onClick={() => onReorder(scenarioId, "left")}
+      >
+        ‹
+      </button>
+      <button
+        type="button"
+        className={btnClass}
+        disabled={!canRight}
+        aria-label="Szenario-Spalte nach rechts verschieben"
+        title="Nach rechts"
+        onClick={() => onReorder(scenarioId, "right")}
+      >
+        ›
+      </button>
+    </div>
+  );
+}
+
 export function ScenarioComparisonTable({
   scenarios,
   onGoToCockpit,
+  onReorderScenario,
 }: ScenarioComparisonTableProps) {
   const current = scenarios.find((s) => s.isCurrent);
   const onlyCurrent = scenarios.length <= 1;
@@ -297,6 +342,8 @@ export function ScenarioComparisonTable({
   }
 
   const baselineRow = current;
+
+  const savedScenarioCount = scenarios.filter((s) => !s.isCurrent).length;
 
   const showGkvRow = scenarios.some((s) => s.kpis.gkvAnteilProzent !== null);
 
@@ -451,21 +498,32 @@ export function ScenarioComparisonTable({
                 className="sticky left-0 z-[1] bg-white pb-3 pr-4 max-md:bg-white md:static md:z-auto md:bg-transparent"
                 aria-hidden
               />
-              {scenarios.map((s) => (
-                <th
-                  key={s.id}
-                  className="min-w-[130px] pb-3 text-right text-xs font-bold uppercase tracking-wider text-brand-muted"
-                >
-                  <span className="inline-block max-w-[10rem] hyphens-auto text-right leading-snug">
-                    {s.name}
-                    {s.isCurrent ? (
-                      <span className="mt-0.5 block text-[10px] font-semibold normal-case tracking-normal text-brand-muted">
-                        (Aktuell)
-                      </span>
+              {scenarios.map((s, colIndex) => {
+                const savedIndex = s.isCurrent ? -1 : colIndex - 1;
+                return (
+                  <th
+                    key={s.id}
+                    className="min-w-[130px] pb-3 align-top text-right text-xs font-bold uppercase tracking-wider text-brand-muted"
+                  >
+                    <span className="inline-block max-w-[10rem] hyphens-auto text-right leading-snug">
+                      {s.name}
+                      {s.isCurrent ? (
+                        <span className="mt-0.5 block text-[10px] font-semibold normal-case tracking-normal text-brand-muted">
+                          (Aktuell)
+                        </span>
+                      ) : null}
+                    </span>
+                    {!s.isCurrent && onReorderScenario ? (
+                      <ColumnShiftButtons
+                        scenarioId={s.id}
+                        savedIndex={savedIndex}
+                        savedCount={savedScenarioCount}
+                        onReorder={onReorderScenario}
+                      />
                     ) : null}
-                  </span>
-                </th>
-              ))}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
