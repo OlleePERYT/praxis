@@ -76,7 +76,7 @@ export function SachkostenInner({ config, onChange }: SachkostenInnerProps) {
             }
           }}
         >
-          Direct
+          Direkt
         </ModePill>
         <ModePill
           active={config.mode === "detail"}
@@ -86,7 +86,7 @@ export function SachkostenInner({ config, onChange }: SachkostenInnerProps) {
             }
           }}
         >
-          Detail
+          Im Detail
         </ModePill>
       </div>
 

@@ -112,8 +112,8 @@ export function KpiBar({ result, baseline }: KpiBarProps) {
             {hasEntnahme ? (
               <div className="mt-6 border-t border-[var(--color-brand-border-soft)] pt-4">
                 <p className="text-sm text-brand-muted">
-                  Nach Entnahme: {formatEuro(result.ueberschussNachEntnahme)}
-                  /Jahr
+                  Verbleibend nach Entnahme:{" "}
+                  {formatEuro(result.ueberschussNachEntnahme)}/Jahr
                 </p>
               </div>
             ) : null}
@@ -123,7 +123,7 @@ export function KpiBar({ result, baseline }: KpiBarProps) {
             <MiniMetric label="Umsatz" value={formatEuro(result.revenue)} />
             <MiniMetric label="Kosten" value={formatEuro(result.totalCost)} />
             <MiniMetric
-              label="PK-Quote"
+              label="Personalkostenquote"
               value={`${percentFormatter.format(pkPct)} %`}
               valueClassName={pkClass}
             />

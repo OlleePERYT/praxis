@@ -36,10 +36,10 @@ function RiskPill({ pct }: { pct: number }) {
   const tier = riskTierLabel(pct);
   const label =
     tier === "high"
-      ? "Risiko hoch"
+      ? "Abhängigkeit hoch"
       : tier === "medium"
-        ? "Risiko mittel"
-        : "Risiko niedrig";
+        ? "Abhängigkeit mittel"
+        : "Abhängigkeit gering";
   const cls =
     tier === "high"
       ? "bg-red-50 text-red-600 border border-red-200"
@@ -110,7 +110,7 @@ export function MetricsCard({
               {pct1.format(sumWeeklyHours)}
             </GradientNumber>
           }
-          foot="Std."
+          foot="Summe je Woche"
         />
         <Tile
           label="Effektive Stunden/Jahr"
@@ -119,16 +119,16 @@ export function MetricsCard({
               {euro0.format(totalEff)}
             </GradientNumber>
           }
-          foot="Std."
+          foot="inkl. Abwesenheiten"
         />
         <Tile
-          label="Erlös/Anwesenheitsstunde"
+          label="Erlös je Anwesenheitsstunde"
           value={
             <GradientNumber size="md" tone="positive">
               {pct2.format(revPerHour)}
             </GradientNumber>
           }
-          foot="€/h"
+          foot="Therapie-Umsatz"
         />
         <Tile
           label="Personalkostenquote"
@@ -140,7 +140,7 @@ export function MetricsCard({
               {pct1.format(pkQuote)} %
             </GradientNumber>
           }
-          foot="%"
+          foot="Anteil vom Umsatz"
           riskPct={pkQuote}
         />
         <Tile
@@ -150,7 +150,7 @@ export function MetricsCard({
               {pct1.format(roomQuote)} %
             </GradientNumber>
           }
-          foot="%"
+          foot="Anteil vom Umsatz"
         />
         <Tile
           label="Überschussquote"
@@ -162,7 +162,7 @@ export function MetricsCard({
               {pct1.format(surplusQuote)} %
             </GradientNumber>
           }
-          foot="%"
+          foot="Anteil vom Umsatz"
         />
         {gkvRisk !== null ? (
           <Tile

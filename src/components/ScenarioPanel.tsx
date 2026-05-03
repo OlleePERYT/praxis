@@ -191,7 +191,7 @@ export function ScenarioPanel({
                 onClick={baseline.onReset}
                 className="rounded-lg border border-[var(--color-brand-border-soft)] bg-white px-3 py-1.5 text-xs font-semibold text-brand-text transition-colors hover:bg-brand-bg/40"
               >
-                Reset
+                Zur Baseline
               </button>
               <button
                 type="button"
@@ -205,7 +205,7 @@ export function ScenarioPanel({
                 onClick={baseline.onClear}
                 className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100"
               >
-                Löschen
+                Baseline verwerfen
               </button>
             </div>
 
@@ -224,7 +224,7 @@ export function ScenarioPanel({
                 >
                   {baselineScenarioControls.successFlash
                     ? "Gespeichert ✓"
-                    : "Baseline als Szenario speichern"}
+                    : "Baseline in Szenario sichern"}
                 </button>
                 {baselineScenarioControls.inlineOpen ? (
                   <div
@@ -274,7 +274,7 @@ export function ScenarioPanel({
             }}
             className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white"
           >
-            Aktuellen Stand als Szenario speichern
+            Neues Szenario aus aktuellem Stand
           </button>
         ) : null}
 
@@ -358,7 +358,7 @@ export function ScenarioPanel({
                   onClick={() => void handleDelete(scenario.id)}
                   className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100"
                 >
-                  Löschen
+                  Szenario löschen
                 </button>
               </div>
             </div>

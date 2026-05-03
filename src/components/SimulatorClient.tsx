@@ -13,7 +13,6 @@ import { ScenarioPanel } from "./ScenarioPanel";
 import { StepSlider } from "./StepSlider";
 import Card from "./ui/Card";
 import Eyebrow from "./ui/Eyebrow";
-import { C } from "@/lib/colors";
 import { defaultEmployee, normalizePraxisConfig } from "@/lib/praxis-config";
 import type {
   Employee,
@@ -274,15 +273,14 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-xl font-semibold" style={{ color: C.primary }}>
+              <h2 className="mb-0 text-2xl font-bold text-brand-primary">
                 Mitarbeiter
               </h2>
               {visibleIndices.length > 0 ? (
                 <button
                   type="button"
                   onClick={toggleAll}
-                  className="rounded-md border px-3 py-1.5 text-xs font-medium"
-                  style={{ borderColor: C.lightBg2, color: C.primary }}
+                  className="rounded-md border border-brand-surface px-3 py-1.5 text-xs font-medium text-brand-primary"
                 >
                   {anyExpanded ? "Alle einklappen" : "Alle aufklappen"}
                 </button>
@@ -312,32 +310,19 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
                 ? `Maximum ${SOFT_LIMIT} Therapeut:innen erreicht`
                 : "+ Mitarbeiter:in hinzufügen"}
             </button>
-            <p
-              className="rounded-lg border px-3 py-2 text-sm font-medium"
-              style={{
-                borderColor: C.lightBg2,
-                backgroundColor: C.lightBg,
-                color: C.primary,
-              }}
-            >
-              Σ Brutto: {euro0.format(sumWeeklyHours)} Std./Wo. | Σ Effektiv:{" "}
-              {euro0.format(sumEffHours)} Std./Jahr | Σ Kosten: {euro0.format(result.personalCost)} €
+            <p className="rounded-lg border border-brand-surface bg-brand-bg px-3 py-2 text-sm font-medium text-brand-primary">
+              Σ Wochenstunden: {euro0.format(sumWeeklyHours)} Std./Wo. | Σ Effektiv:{" "}
+              {euro0.format(sumEffHours)} Std./Jahr | Σ Kosten:{" "}
+              {euro0.format(result.personalCost)} €
             </p>
           </div>
 
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold" style={{ color: C.primary }}>
-              Erlöse
-            </h2>
+            <h2 className="mb-0 text-2xl font-bold text-brand-primary">Erlöse</h2>
             <RevenuePanel config={config.revenue} onChange={updateRevenue} />
-            <section
-              className="rounded-xl border p-4 shadow-sm"
-              style={{ backgroundColor: C.white, borderColor: C.lightBg2 }}
-            >
-              <h3
-                className="mb-3 text-base font-semibold"
-                style={{ color: C.primary }}
-              >
+            <Card variant="default" contentClassName="p-6">
+              <Eyebrow>Weitere Einnahmen</Eyebrow>
+              <h3 className="mb-4 mt-2 text-xl font-bold text-brand-ink">
                 Sonstige Erträge
               </h3>
               <div className="space-y-3">
@@ -365,8 +350,8 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
                   }
                 />
               </div>
-            </section>
-            <h2 className="mb-4 text-2xl font-bold text-brand-primary">Kosten</h2>
+            </Card>
+            <h2 className="mb-0 text-2xl font-bold text-brand-primary">Kosten</h2>
 
             <Card variant="default" contentClassName="p-6">
               <Eyebrow>Kostenstruktur</Eyebrow>
@@ -393,7 +378,7 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
             </Card>
 
             <Card variant="default" contentClassName="p-6" className="mt-6">
-              <Eyebrow>Inhaber-Vergütung</Eyebrow>
+              <Eyebrow>Geschäftsführung</Eyebrow>
               <h3 className="mb-4 mt-2 text-xl font-bold text-brand-ink">
                 Geschäftsführer-Gehalt
               </h3>

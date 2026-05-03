@@ -97,7 +97,7 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
 
   return (
     <Card variant="default">
-      <Eyebrow>Erlöse</Eyebrow>
+      <Eyebrow>Modell</Eyebrow>
       <h3 className="mb-4 mt-4 text-xl font-bold text-brand-ink">
         Erlös-Modell
       </h3>
@@ -107,7 +107,7 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
           active={config.mode === "direct"}
           onClick={() => onChange(defaultDirect)}
         >
-          Direct
+          Direkt
         </ModePill>
         <ModePill
           active={config.mode === "mix"}
@@ -258,7 +258,7 @@ function MixSummary({ config }: { config: RevenueConfigMix }) {
     `GKV ${fmt2.format(parts.gkv)} €/h`,
     `PKV ${fmt2.format(parts.pkv)} €/h`,
     `BG ${fmt2.format(parts.bg)} €/h`,
-    `SZ ${fmt2.format(parts.self)} €/h`,
+    `Selbstzahler ${fmt2.format(parts.self)} €/h`,
   ].join(" · ");
 
   return (

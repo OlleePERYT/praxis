@@ -64,7 +64,7 @@ export function ComparisonTable({
       style={{ backgroundColor: C.white, borderColor: C.lightBg2 }}
     >
       <h2 className="text-xl font-semibold" style={{ color: C.primary }}>
-        Vergleich Referenz
+        Referenzvergleich
       </h2>
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="overflow-x-auto">
@@ -73,7 +73,7 @@ export function ComparisonTable({
               <tr style={{ color: C.gray }}>
                 <th className="p-2 text-left" />
                 <th className="p-2 text-right">{refLabel}</th>
-                <th className="p-2 text-right">Planung</th>
+                <th className="p-2 text-right">Simulation</th>
                 <th className="p-2 text-right">Differenz</th>
               </tr>
             </thead>
@@ -108,7 +108,7 @@ export function ComparisonTable({
               />
               <Legend />
               <Bar dataKey="referenz" name={refLabel} fill={C.accent} />
-              <Bar dataKey="planung" name="Planung" fill={C.primary} />
+              <Bar dataKey="planung" name="Simulation" fill={C.primary} />
             </BarChart>
           </ResponsiveContainer>
         </div>

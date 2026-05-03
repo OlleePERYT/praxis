@@ -70,7 +70,7 @@ function DbPill({ db }: { db: number }) {
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}
     >
-      DB: {sign}
+      Deckungsbeitrag: {sign}
       {euro.format(Math.abs(db))} €/Jahr
     </span>
   );
@@ -88,7 +88,7 @@ export function ProfitLoss({ result, employees, sachkosten }: ProfitLossProps) {
       ? ([
           ["Raum-Nebenkosten", sachkosten.raumNebenkosten],
           ["Material", sachkosten.material],
-          ["Software", sachkosten.software],
+          ["Software & Lizenzen", sachkosten.software],
           ["Versicherungen", sachkosten.versicherungen],
           ["Marketing", sachkosten.marketing],
           ["Sonstiges", sachkosten.sonstiges],
@@ -164,7 +164,7 @@ export function ProfitLoss({ result, employees, sachkosten }: ProfitLossProps) {
             ))}
           </>
         ) : (
-          <SimpleRow label="Sachkosten (Direct)" value={result.sachkostenJahr} />
+          <SimpleRow label="Sachkosten gesamt" value={result.sachkostenJahr} />
         )}
         <SimpleRow label="Miete (Jahr)" value={result.mieteJahr} />
         <SimpleRow label="Weiterbildungskosten gesamt" value={result.trainingCostTotal} />
