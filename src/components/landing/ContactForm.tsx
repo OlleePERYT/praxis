@@ -163,13 +163,13 @@ export default function ContactForm({ variant = "landing" }: ContactFormProps) {
     <div id="kontakt" className="bg-brand-bg py-24 md:py-[100px]">
       <div className="mx-auto max-w-xl px-4 md:px-6">
         <div className="text-center">
-          <Eyebrow>Jetzt anfragen</Eyebrow>
+          <Eyebrow>Schreiben Sie uns</Eyebrow>
           <h2 className="mt-4 text-3xl font-bold text-brand-ink md:text-4xl">
-            Wir richten alles ein.
+            Wir freuen uns auf{" "}
+            <span className="accent">Ihre Nachricht</span>.
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-brand-text">
-            Sie füllen nur dieses Formular aus — wir melden uns mit einem
-            konkreten Vorschlag.
+            Wir melden uns innerhalb von 24 Stunden.
           </p>
         </div>
 

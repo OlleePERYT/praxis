@@ -13,11 +13,12 @@ export default function CTABand() {
     >
       <div className="mx-auto max-w-2xl px-4 text-center md:px-6">
         <h2 className="text-4xl font-extrabold leading-tight text-brand-ink md:text-[48px]">
-          Lohnt sich das für{" "}
-          <span className="text-brand-primary">Ihre Praxis?</span>
+          Lust auf{" "}
+          <span className="accent">einen ersten Eindruck?</span>
         </h2>
         <p className="mt-4 text-lg text-brand-text md:text-xl">
-          30 Minuten Gespräch. Kostenlos. Wir zeigen es Ihnen mit Ihren Zahlen.
+          30 Minuten Gespräch, kostenlos und unverbindlich. Wir zeigen Ihnen
+          alles mit Ihren echten Zahlen.
         </p>
         <Link
           href="#kontakt"

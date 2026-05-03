@@ -52,13 +52,13 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Landing Hero — Demo-Slider & rotierendes Wort */
-.landing-rotating-word {
+/* Landing Hero — Akzent-Unterstreichung „In Sekunden.“ */
+.landing-hero-accent {
   position: relative;
   display: inline-block;
 }
 
-.landing-rotating-word::after {
+.landing-hero-accent::after {
   content: "";
   position: absolute;
   left: 0;
@@ -72,6 +72,14 @@ body {
     rgba(82, 183, 136, 0.45)
   );
   z-index: -1;
+}
+
+/* Verkaufsseite — Gradient-Akzentwort */
+.accent {
+  background-image: linear-gradient(to bottom right, #2d6a4f, #52b788);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 input[type="range"].landing-hero-range {

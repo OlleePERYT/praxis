@@ -1,12 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Eyebrow from "@/components/ui/Eyebrow";
 import GradientNumber from "@/components/ui/GradientNumber";
-import { GRADIENTS } from "@/lib/colors";
-
-const ROTATING = ["Excel-Hölle.", "Excel-Stress.", "Zahlen-Chaos."];
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
@@ -19,14 +16,6 @@ function formatEuro(n: number) {
 export default function Hero() {
   const [hours, setHours] = useState(31);
   const [rate, setRate] = useState(26);
-  const [wordIx, setWordIx] = useState(0);
-
-  useEffect(() => {
-    const t = setInterval(() => {
-      setWordIx((i) => (i + 1) % ROTATING.length);
-    }, 2800);
-    return () => clearInterval(t);
-  }, []);
 
   const surplus = useMemo(
     () => hours * 200 - rate * 30 + 4000,
@@ -53,7 +42,7 @@ export default function Hero() {
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        className="pointer-events-none absolute inset-0 opacity-[0.025]"
         style={{
           backgroundImage:
             "radial-gradient(#1E2328 1px, transparent 1px)",
@@ -62,7 +51,7 @@ export default function Hero() {
         aria-hidden
       />
 
-      <div className="pointer-events-none absolute right-0 top-0 hidden h-[min(420px,55vw)] w-[min(520px,90vw)] lg:block">
+      <div className="hero-arcs pointer-events-none absolute right-0 top-0 hidden h-[min(420px,55vw)] w-[min(520px,90vw)] opacity-[0.25] lg:block">
         <svg viewBox="0 0 420 320" className="h-full w-full" aria-hidden>
           <path
             d="M40 280 Q 120 120 200 80 Q 280 40 380 20"
@@ -113,24 +102,16 @@ export default function Hero() {
         <div>
           <Eyebrow withPulse>Für Therapiepraxen in Deutschland</Eyebrow>
           <h1 className="mt-6 text-5xl font-extrabold leading-[1.05] tracking-tight text-brand-ink md:text-6xl lg:text-7xl">
-            Reglerziehen
+            Bessere Entscheidungen.
             <br />
-            statt{" "}
-            <span className="landing-rotating-word italic">
-              <span
-                className="bg-clip-text text-transparent transition-opacity duration-500"
-                style={{
-                  backgroundImage: GRADIENTS.primary,
-                }}
-              >
-                {ROTATING[wordIx]}
-              </span>
+            <span className="landing-hero-accent bg-gradient-to-br from-brand-primary to-[#52B788] bg-clip-text text-transparent italic">
+              In Sekunden.
             </span>
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-brand-text md:text-xl">
-            Sehen Sie sofort, wie sich eine neue Therapeutin, eine höhere
-            Vergütung oder weniger Sachkosten auf Ihren Jahresüberschuss
-            auswirken — ohne Tabellenkalkulation.
+            So einfach wie ein Schieberegler. Kein Excel, kein
+            Steuerberater-Termin, kein BWL-Studium nötig — Sie bewegen einen
+            Regler und sehen sofort, was sich für Ihre Praxis ändert.
           </p>
           <div className="mt-10 flex flex-wrap items-center gap-6">
             <Link
@@ -145,11 +126,7 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="relative mx-auto w-full max-w-lg lg:mx-0 lg:max-w-none">
-          <div className="pointer-events-none absolute -left-6 -top-4 hidden h-24 w-24 rounded-full border-2 border-dashed border-brand-primary/25 lg:block" />
-          <div className="pointer-events-none absolute -bottom-2 -right-4 h-14 w-14 rounded-full bg-brand-primary/10" />
-          <div className="pointer-events-none absolute right-8 top-12 h-3 w-3 rounded-full bg-brand-accent/60" />
-
+        <div className="relative mx-auto w-full max-w-lg before:pointer-events-none before:absolute before:-inset-[30px] before:-z-10 before:rounded-[2rem] before:bg-[radial-gradient(ellipse_at_center,rgba(82,183,136,0.12),transparent_68%)] lg:mx-0 lg:max-w-none">
           <div className="relative rounded-2xl border border-[var(--color-brand-border-soft)] bg-white/90 p-7 shadow-[var(--shadow-glow-md)] backdrop-blur-md md:p-8">
             <div
               className="pointer-events-none absolute left-0 right-0 top-0 h-1 rounded-t-2xl"

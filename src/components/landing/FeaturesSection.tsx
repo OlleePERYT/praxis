@@ -72,7 +72,7 @@ function IllustrationTeam() {
   );
 }
 
-function IllustrationAmpel() {
+function IllustrationDonut() {
   return (
     <svg viewBox="0 0 220 220" className="mx-auto h-[220px] w-full max-w-[220px]" aria-hidden>
       <circle
@@ -98,7 +98,7 @@ function IllustrationAmpel() {
       </defs>
       <text
         x="110"
-        y="122"
+        y="112"
         textAnchor="middle"
         fill="#1e2328"
         fontSize="26"
@@ -107,31 +107,39 @@ function IllustrationAmpel() {
       >
         70%
       </text>
-      <circle cx="56" cy="156" r="6" fill="#E67E22" opacity={0.9} />
-      <circle cx="110" cy="172" r="6" fill="#2E8B57" opacity={0.9} />
-      <circle cx="164" cy="156" r="6" fill="#C0392B" opacity={0.85} />
+      <text
+        x="110"
+        y="138"
+        textAnchor="middle"
+        fill="#6b7b6e"
+        fontSize="13"
+        fontWeight={600}
+        fontFamily="var(--font-sans), sans-serif"
+      >
+        GKV-Anteil
+      </text>
     </svg>
   );
 }
 
 const CARDS = [
   {
-    num: "01.0",
-    title: "Überschuss und Personal im gleichen Bild",
-    body: "Sehen Sie Personalkostenquote, Raumkosten und Therapie-Erlös – ohne Excel und ohne Wartezeit auf die nächste BWA.",
+    num: "01",
+    title: "Szenarien spielen",
+    body: "Regler bewegen, Praxisüberschuss sofort sehen. Was bringt eine Stunde mehr? Was ändert eine neue Therapeutin? Sie sehen es in Sekunden.",
     Illustration: IllustrationHebel,
   },
   {
-    num: "02.0",
-    title: "Team und Erlös zusammendenken",
-    body: "Verteilen Sie den Therapie-Umsatz nach effektiven Stunden und erkennen Sie, welche Rolle jede Therapeutin für die Wirtschaftlichkeit spielt.",
+    num: "02",
+    title: "Personal verstehen",
+    body: "Was kostet eine Therapeut:in wirklich — inklusive Urlaub, Krankheit und Fortbildung? Welcher Stundenlohn passt zu welchem Stundensatz?",
     Illustration: IllustrationTeam,
   },
   {
-    num: "03.0",
-    title: "Risiken erkennen, bevor sie ins Budget schlagen",
-    body: "GKV-Anteil, Auslastung und Mix-Modell transparent darstellen – damit Sie früh gegensteuern können.",
-    Illustration: IllustrationAmpel,
+    num: "03",
+    title: "Erlös-Mix im Blick",
+    body: "Wie viel Umsatz kommt von der GKV? Wie viel Spielraum haben Sie? Eine klare Sicht auf Ihre Einnahmequellen — jederzeit.",
+    Illustration: IllustrationDonut,
   },
 ] as const;
 
@@ -139,10 +147,9 @@ export default function FeaturesSection() {
   return (
     <section className="bg-brand-bg py-20 md:py-28">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
-        <Eyebrow>Was Sie damit machen</Eyebrow>
+        <Eyebrow>Was Sie damit machen können</Eyebrow>
         <h2 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight text-brand-ink md:text-5xl">
-          Drei{" "}
-          <span className="text-brand-primary">Hebel</span>, die zählen.
+          Drei Hebel für <span className="accent">Ihre Praxis</span>.
         </h2>
 
         <div className="mt-14 grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-8">

@@ -5,28 +5,28 @@ import Eyebrow from "@/components/ui/Eyebrow";
 
 const FAQS = [
   {
-    q: "Was genau ist praxis-kennzahlen.de?",
-    a: "Eine webbasierte Kalkulation für Ihre Praxis: Sie stellen Wochenstunden, Löhne, Erlöse und Kosten ein und sehen sofort den voraussichtlichen Jahresüberschuss – inklusive Szenarien und einfacher Visualisierungen.",
+    q: "Brauche ich technisches Vorwissen?",
+    a: "Nein. Wir richten alles für Sie ein. Sie loggen sich ein und ziehen Regler — das war's. Keine Installation, keine Updates, keine IT.",
   },
   {
-    q: "Wo liegen meine Daten?",
-    a: "Die Anwendung läuft auf Servern in Deutschland. Die Zuordnung erfolgt über Ihre Praxis-Subdomain; Details finden Sie in der Datenschutzerklärung.",
+    q: "Was passiert mit meinen Daten?",
+    a: "Alle Daten liegen auf deutschen Servern (Hetzner, Falkenstein/Nürnberg). DSGVO-konform. Keine US-Cloud dazwischen. AVV inklusive.",
   },
   {
-    q: "Brauche ich Buchhaltungs-Vorkenntnisse?",
-    a: "Nein. Die Oberfläche ist auf Therapeutinnen und Praxisinhaber ausgelegt. Einzig die Bereitschaft, wenige Kennzahlen einzugeben, wird vorausgesetzt.",
+    q: "Was ist im Preis enthalten?",
+    a: "Software-Lizenz für Ihre Praxis, persönliches Onboarding (30 Min.), 3 Jahre Hosting, 12 Monate Bugfixes. Einmalig 690 €.",
   },
   {
-    q: "Was kostet die Lizenz?",
-    a: "690 € einmalig pro Praxis, ohne Abo. Hosting für drei Jahre ist eingeschlossen; danach vereinbaren wir eine schlanke Fortzahlung je nach Preisstand zu diesem Zeitpunkt.",
+    q: "Was, wenn ich mehrere Praxen habe?",
+    a: "Eine Lizenz pro Praxis. Filialvergleich kommt in Version 1.1 als optionales Modul.",
   },
   {
-    q: "Kann ich mehrere Szenarien speichern?",
-    a: "Ja – Sie können den aktuellen Stand als Szenario speichern (bis zu drei) und jederzeit mit Ihrer Baseline vergleichen.",
+    q: "Kann ich es vorher sehen?",
+    a: "Ja. Im 30-min. Onboarding-Call zeigen wir Ihnen alles live mit Ihren BWA-Zahlen. Kostenlos und unverbindlich.",
   },
   {
-    q: "Wie läuft das Onboarding ab?",
-    a: "In der Regel reichen rund 30 Minuten: Zugang, kurze Einführung, gemeinsames Befüllen der Stammdaten. Technischer Support ist über die Kontaktseite erreichbar.",
+    q: "Was ist mit Updates?",
+    a: "Bugfixes 12 Monate inklusive. Neue Funktionen kommen als einzelne Module (90–190 €). Sie bezahlen nur, was Sie wirklich brauchen.",
   },
 ] as const;
 
@@ -40,16 +40,17 @@ export default function FAQSection() {
           <div>
             <Eyebrow>Fragen &amp; Antworten</Eyebrow>
             <h2 className="mt-4 text-4xl font-extrabold leading-tight tracking-tight text-brand-ink md:text-5xl lg:text-[56px]">
-              Häufig{" "}
-              <span className="text-brand-primary">gestellte Fragen.</span>
+              Sie haben{" "}
+              <span className="accent">Fragen?</span>
             </h2>
-            <p className="mt-4 text-sm leading-relaxed text-brand-muted">
-              Wenn Ihre Frage fehlt, schreiben Sie uns über{" "}
+            <p className="mt-4 text-sm leading-relaxed text-brand-muted md:text-[15px]">
+              Hier sind die Antworten, die uns am häufigsten erreichen. Falls
+              Ihre Frage fehlt,{" "}
               <a
                 href="#kontakt"
                 className="font-medium text-brand-primary hover:underline"
               >
-                Kontakt
+                schreiben Sie uns einfach
               </a>
               .
             </p>
