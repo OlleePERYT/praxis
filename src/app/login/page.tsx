@@ -23,7 +23,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       await signIn("credentials", {
         email,
         password,
-        redirectTo: "/",
+        redirectTo: "/dashboard",
       });
     } catch (error) {
       if (error instanceof AuthError) {

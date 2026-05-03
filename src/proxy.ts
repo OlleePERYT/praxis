@@ -19,11 +19,41 @@ function getSubdomain(hostHeader: string | null): string | null {
   return parts[0] ?? null;
 }
 
+/**
+ * Praxis-Subdomain: zuerst aus dem Host (Kunden-Subdomain), sonst aus der
+ * Session (Apex-Domain nach Login, z. B. praxis-kennzahlen.de).
+ */
+function getEffectivePracticeSubdomain(
+  hostSubdomain: string | null,
+  req: NextAuthRequest,
+): string | null {
+  if (hostSubdomain) {
+    return hostSubdomain;
+  }
+  const fromSession = req.auth?.user?.practiceSubdomain;
+  return typeof fromSession === "string" && fromSession.length > 0
+    ? fromSession
+    : null;
+}
+
+function withPracticeHeader(
+  req: NextAuthRequest,
+  base: Headers,
+  hostSubdomain: string | null,
+) {
+  const tenant = getEffectivePracticeSubdomain(hostSubdomain, req);
+  if (tenant) {
+    base.set("x-practice-subdomain", tenant);
+  } else {
+    base.delete("x-practice-subdomain");
+  }
+}
+
 const middlewareImpl = (req: NextAuthRequest) => {
   const { nextUrl } = req;
   const { pathname } = nextUrl;
 
-  const subdomain = getSubdomain(req.headers.get("host"));
+  const hostSubdomain = getSubdomain(req.headers.get("host"));
 
   const isAuthApi = pathname.startsWith("/api/auth");
   const isLoginPage = pathname === "/login";
@@ -34,7 +64,7 @@ const middlewareImpl = (req: NextAuthRequest) => {
     pathname.startsWith("/assets");
 
   const isMarketingPublic =
-    !subdomain &&
+    !hostSubdomain &&
     (pathname === "/" ||
       pathname.startsWith("/impressum") ||
       pathname.startsWith("/datenschutz"));
@@ -44,13 +74,14 @@ const middlewareImpl = (req: NextAuthRequest) => {
     return NextResponse.next();
   }
 
+  // Apex: eingeloggte Nutzer nicht auf die Verkaufsseite (/) schicken
+  if (!hostSubdomain && pathname === "/" && req.auth?.user) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
   if (isMarketingPublic || isContactApi) {
     const requestHeaders = new Headers(req.headers);
-    if (subdomain) {
-      requestHeaders.set("x-practice-subdomain", subdomain);
-    } else {
-      requestHeaders.delete("x-practice-subdomain");
-    }
+    withPracticeHeader(req, requestHeaders, hostSubdomain);
     return NextResponse.next({
       request: {
         headers: requestHeaders,
@@ -64,11 +95,7 @@ const middlewareImpl = (req: NextAuthRequest) => {
   }
 
   const requestHeaders = new Headers(req.headers);
-  if (subdomain) {
-    requestHeaders.set("x-practice-subdomain", subdomain);
-  } else {
-    requestHeaders.delete("x-practice-subdomain");
-  }
+  withPracticeHeader(req, requestHeaders, hostSubdomain);
 
   return NextResponse.next({
     request: {
