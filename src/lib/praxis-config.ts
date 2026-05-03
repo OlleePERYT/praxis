@@ -198,3 +198,108 @@ export function normalizePraxisConfig(rawConfig: unknown): PraxisConfig {
     inhaberEntnahmeMonat: asNumber(source.inhaberEntnahmeMonat, 0),
   };
 }
+
+/** JSON-Schlüssel für den gespeicherten Was-wäre-wenn-Vergleichspunkt (nicht Teil von PraxisConfig). */
+export const COMPARISON_ANCHOR_KEY = "comparisonAnchor" as const;
+
+export function praxisConfigToPlainObject(c: PraxisConfig): Record<string, unknown> {
+  const revenue =
+    c.revenue.mode === "direct"
+      ? { mode: "direct" as const, revPerHour: c.revenue.revPerHour }
+      : {
+          mode: "mix" as const,
+          gkvPct: c.revenue.gkvPct,
+          pkvPct: c.revenue.pkvPct,
+          bgPct: c.revenue.bgPct,
+          gkvPerTreatment: c.revenue.gkvPerTreatment,
+          pkvPerTreatment: c.revenue.pkvPerTreatment,
+          bgPerTreatment: c.revenue.bgPerTreatment,
+          selfPerTreatment: c.revenue.selfPerTreatment,
+          treatmentsPerHour: c.revenue.treatmentsPerHour,
+          utilization: c.revenue.utilization,
+        };
+
+  const sachkosten =
+    c.sachkosten.mode === "direct"
+      ? { mode: "direct" as const, value: c.sachkosten.value }
+      : {
+          mode: "detail" as const,
+          raumNebenkosten: c.sachkosten.raumNebenkosten,
+          material: c.sachkosten.material,
+          software: c.sachkosten.software,
+          versicherungen: c.sachkosten.versicherungen,
+          marketing: c.sachkosten.marketing,
+          sonstiges: c.sachkosten.sonstiges,
+        };
+
+  const out: Record<string, unknown> = {
+    employees: c.employees.map((e) => ({ ...e })),
+    revenue,
+    mieteMonat: c.mieteMonat,
+    untermiete: c.untermiete,
+    handelswareJahr: c.handelswareJahr,
+    sachkosten,
+    refRevenue: c.refRevenue,
+    refCosts: c.refCosts,
+    refSurplus: c.refSurplus,
+    refLabel: c.refLabel,
+    gfGehaltMonat: c.gfGehaltMonat,
+    inhaberEntnahmeMonat: c.inhaberEntnahmeMonat,
+  };
+
+  if (c.branding && Object.keys(c.branding).length > 0) {
+    out.branding = c.branding;
+  }
+
+  return out;
+}
+
+/**
+ * Zerlegt rohe Practice-JSON (inkl. optionalem Vergleichspunkt) für Laden aus der DB.
+ */
+export function splitPracticeConfigRaw(raw: unknown): {
+  withoutAnchor: unknown;
+  anchor: { savedAt: string; snapshot: PraxisConfig } | null;
+} {
+  if (typeof raw !== "object" || raw === null) {
+    return { withoutAnchor: {}, anchor: null };
+  }
+  const o = { ...(raw as Record<string, unknown>) };
+  const ca = o[COMPARISON_ANCHOR_KEY];
+  delete o[COMPARISON_ANCHOR_KEY];
+
+  if (
+    typeof ca === "object" &&
+    ca !== null &&
+    typeof (ca as Record<string, unknown>).savedAt === "string"
+  ) {
+    const snapRaw = (ca as Record<string, unknown>).snapshot;
+    if (snapRaw !== undefined) {
+      const snapshot = normalizePraxisConfig(snapRaw);
+      return {
+        withoutAnchor: o,
+        anchor: {
+          savedAt: (ca as Record<string, unknown>).savedAt as string,
+          snapshot,
+        },
+      };
+    }
+  }
+
+  return { withoutAnchor: o, anchor: null };
+}
+
+/** Baut das komplette DB-Dokument (Praxisdaten + optionaler Vergleichspunkt). */
+export function buildPracticeConfigDocument(
+  config: PraxisConfig,
+  comparisonAnchor: { savedAt: string; snapshot: PraxisConfig } | null,
+): Record<string, unknown> {
+  const doc = praxisConfigToPlainObject(config);
+  if (comparisonAnchor) {
+    doc[COMPARISON_ANCHOR_KEY] = {
+      savedAt: comparisonAnchor.savedAt,
+      snapshot: praxisConfigToPlainObject(comparisonAnchor.snapshot),
+    };
+  }
+  return doc;
+}

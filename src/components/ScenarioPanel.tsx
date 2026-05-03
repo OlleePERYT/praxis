@@ -26,14 +26,14 @@ export type ScenarioBaselineScenarioInline = {
 export type ScenarioPanelBaselineProps =
   | {
       state: "empty";
-      onRemember: () => void;
+      onRemember: () => void | Promise<void>;
     }
   | {
       state: "active";
       savedLabel: string;
       onReset: () => void;
-      onUpdate: () => void;
-      onClear: () => void;
+      onUpdate: () => void | Promise<void>;
+      onClear: () => void | Promise<void>;
       baselineScenario: ScenarioBaselineScenarioInline;
     };
 
@@ -42,6 +42,10 @@ type ScenarioPanelProps = {
   onLoad: (config: unknown) => void;
   baseline: ScenarioPanelBaselineProps;
   baselineScenarioInlineRef: RefObject<HTMLDivElement | null>;
+  /** Fehler beim Speichern der Arbeitskonfiguration / des Vergleichspunkts */
+  workspaceError?: string | null;
+  /** Primäraktion „Vergleichspunkt setzen“ läuft */
+  rememberBusy?: boolean;
 };
 
 function formatDate(value: string): string {
@@ -58,6 +62,8 @@ export function ScenarioPanel({
   onLoad,
   baseline,
   baselineScenarioInlineRef,
+  workspaceError = null,
+  rememberBusy = false,
 }: ScenarioPanelProps) {
   const [scenarios, setScenarios] = useState<ScenarioDto[]>([]);
   const [saveExpanded, setSaveExpanded] = useState(false);
@@ -166,17 +172,26 @@ export function ScenarioPanel({
 
       <div className="rounded-xl bg-[var(--color-brand-surface-cool)] p-4">
         {baseline.state === "empty" ? (
-          <button
-            type="button"
-            onClick={baseline.onRemember}
-            className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white"
-          >
-            Aktuellen Stand merken
-          </button>
+          <div className="space-y-3">
+            <p className="text-sm leading-relaxed text-brand-text">
+              Ihre Eingaben werden automatisch gesichert. Setzen Sie einen{" "}
+              <strong>Vergleichspunkt</strong>, um später zu sehen, wie sich Ihr
+              Praxisüberschuss gegenüber diesem Stand verändert (grünes Kennzeichen
+              oben).
+            </p>
+            <button
+              type="button"
+              disabled={rememberBusy}
+              onClick={() => void baseline.onRemember()}
+              className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {rememberBusy ? "Wird gespeichert…" : "Vergleichspunkt setzen"}
+            </button>
+          </div>
         ) : (
           <div className="space-y-3">
             <p className="text-xs text-brand-muted">
-              Baseline:{" "}
+              Vergleich mit gespeichertem Stand vom{" "}
               <span className="font-medium text-brand-text">
                 {baseline.savedLabel}
               </span>
@@ -187,21 +202,22 @@ export function ScenarioPanel({
                 onClick={baseline.onReset}
                 className="rounded-lg border border-[var(--color-brand-border-soft)] bg-white px-3 py-1.5 text-xs font-semibold text-brand-text transition-colors hover:bg-brand-bg/40"
               >
-                Zur Baseline
+                Zurück zum Vergleichspunkt
               </button>
               <button
                 type="button"
-                onClick={baseline.onUpdate}
-                className="rounded-lg border border-[var(--color-brand-border-soft)] bg-white px-3 py-1.5 text-xs font-semibold text-brand-text transition-colors hover:bg-brand-bg/40"
+                disabled={rememberBusy}
+                onClick={() => void baseline.onUpdate()}
+                className="rounded-lg border border-[var(--color-brand-border-soft)] bg-white px-3 py-1.5 text-xs font-semibold text-brand-text transition-colors hover:bg-brand-bg/40 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Aktualisieren
+                {rememberBusy ? "…" : "Vergleichspunkt aktualisieren"}
               </button>
               <button
                 type="button"
-                onClick={baseline.onClear}
+                onClick={() => void baseline.onClear()}
                 className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100"
               >
-                Baseline verwerfen
+                Vergleich aufheben
               </button>
             </div>
 
@@ -220,7 +236,7 @@ export function ScenarioPanel({
                 >
                   {baselineScenarioControls.successFlash
                     ? "Gespeichert ✓"
-                    : "Baseline in Szenario sichern"}
+                    : "Diesen Vergleich als Szenario speichern"}
                 </button>
                 {baselineScenarioControls.inlineOpen ? (
                   <div
@@ -259,6 +275,12 @@ export function ScenarioPanel({
           </div>
         )}
       </div>
+
+      {workspaceError ? (
+        <p className="mt-4 text-sm text-red-600" role="alert">
+          {workspaceError}
+        </p>
+      ) : null}
 
       <div className="mt-6 space-y-3">
         {!maxReached && !saveExpanded ? (

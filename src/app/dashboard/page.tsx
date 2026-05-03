@@ -6,7 +6,8 @@ import { PracticeHeader } from "@/components/PracticeHeader";
 import { SimulatorClient } from "@/components/SimulatorClient";
 import { db } from "@/db";
 import { resolveBranding } from "@/lib/branding";
-import { normalizePraxisConfig } from "@/lib/praxis-config";
+import { calculatePraxis } from "@/lib/engine";
+import { normalizePraxisConfig, splitPracticeConfigRaw } from "@/lib/praxis-config";
 import { getPracticeFromHeaders } from "@/lib/tenant";
 
 export default async function DashboardPage() {
@@ -33,7 +34,16 @@ export default async function DashboardPage() {
     parsedConfig = {};
   }
 
-  const initialConfig = normalizePraxisConfig(parsedConfig);
+  const { withoutAnchor, anchor } = splitPracticeConfigRaw(parsedConfig);
+  const initialConfig = normalizePraxisConfig(withoutAnchor);
+  const initialBaseline =
+    anchor !== null
+      ? {
+          config: anchor.snapshot,
+          result: calculatePraxis(anchor.snapshot),
+          savedAt: anchor.savedAt,
+        }
+      : null;
   const { primary, accent } = resolveBranding(initialConfig.branding);
 
   const tenantCssVars = {
@@ -58,7 +68,10 @@ export default async function DashboardPage() {
       <div className="relative z-10 flex min-h-screen flex-col">
         <PracticeHeader practiceName={practice.name} />
         <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-6 pb-6">
-          <SimulatorClient initialConfig={initialConfig} />
+          <SimulatorClient
+            initialConfig={initialConfig}
+            initialBaseline={initialBaseline}
+          />
         </div>
         <PracticeFooter />
       </div>

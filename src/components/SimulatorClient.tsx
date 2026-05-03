@@ -12,7 +12,11 @@ import { SachkostenInner } from "./SachkostenInner";
 import { ScenarioPanel } from "./ScenarioPanel";
 import { StepSlider } from "./StepSlider";
 import Card from "./ui/Card";
-import { defaultEmployee, normalizePraxisConfig } from "@/lib/praxis-config";
+import {
+  buildPracticeConfigDocument,
+  defaultEmployee,
+  normalizePraxisConfig,
+} from "@/lib/praxis-config";
 import type {
   Employee,
   PraxisConfig,
@@ -38,14 +42,35 @@ function formatBaselineLabel(iso: string): string {
 
 type SimulatorClientProps = {
   initialConfig: PraxisConfig;
+  initialBaseline?: Baseline | null;
 };
 
-export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
+function sealPersistedPayload(cfg: PraxisConfig, b: Baseline | null): string {
+  const norm = normalizePraxisConfig(JSON.parse(JSON.stringify(cfg)));
+  const doc = buildPracticeConfigDocument(
+    norm,
+    b ? { savedAt: b.savedAt, snapshot: b.config } : null,
+  );
+  return JSON.stringify(doc);
+}
+
+export function SimulatorClient({
+  initialConfig,
+  initialBaseline = null,
+}: SimulatorClientProps) {
   const [config, setConfig] = useState<PraxisConfig>(initialConfig);
   const [expanded, setExpanded] = useState<boolean[]>(() =>
     initialConfig.employees.map(() => false),
   );
-  const [baseline, setBaseline] = useState<Baseline | null>(null);
+  const [baseline, setBaseline] = useState<Baseline | null>(() =>
+    initialBaseline ?? null,
+  );
+
+  const [workspaceError, setWorkspaceError] = useState<string | null>(null);
+  const [rememberBusy, setRememberBusy] = useState(false);
+
+  const lastPersistedRef = useRef(sealPersistedPayload(initialConfig, initialBaseline ?? null));
+  const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [savingScenario, setSavingScenario] = useState(false);
   const [scenarioName, setScenarioName] = useState("");
@@ -58,19 +83,116 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
 
   const result = useMemo(() => calculatePraxis(config), [config]);
 
+  const persistWorkspace = useCallback(
+    async (cfg: PraxisConfig, anchor: { savedAt: string; snapshot: PraxisConfig } | null) => {
+      const res = await fetch("/api/practice/config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          config: cfg,
+          comparisonAnchor: anchor,
+        }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error ?? "Speichern fehlgeschlagen.");
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const nextSeal = sealPersistedPayload(config, baseline);
+    if (nextSeal === lastPersistedRef.current) return;
+
+    if (persistTimerRef.current) {
+      clearTimeout(persistTimerRef.current);
+    }
+
+    persistTimerRef.current = setTimeout(() => {
+      void (async () => {
+        try {
+          setWorkspaceError(null);
+          const norm = normalizePraxisConfig(JSON.parse(JSON.stringify(config)));
+          await persistWorkspace(
+            norm,
+            baseline
+              ? { savedAt: baseline.savedAt, snapshot: baseline.config }
+              : null,
+          );
+          lastPersistedRef.current = sealPersistedPayload(config, baseline);
+        } catch (err) {
+          setWorkspaceError(
+            err instanceof Error ? err.message : "Speichern fehlgeschlagen.",
+          );
+        }
+      })();
+    }, 1200);
+
+    return () => {
+      if (persistTimerRef.current) {
+        clearTimeout(persistTimerRef.current);
+        persistTimerRef.current = null;
+      }
+    };
+  }, [config, baseline, persistWorkspace]);
+
   const cancelScenarioInline = useCallback(() => {
     setSavingScenario(false);
     setScenarioName("");
     setSaveError(null);
   }, []);
 
-  const clearBaseline = () => {
+  const clearBaseline = async () => {
+    if (persistTimerRef.current) {
+      clearTimeout(persistTimerRef.current);
+      persistTimerRef.current = null;
+    }
     setBaseline(null);
     cancelScenarioInline();
     setScenarioSaveSuccessFlash(false);
     if (successFlashTimeoutRef.current) {
       clearTimeout(successFlashTimeoutRef.current);
       successFlashTimeoutRef.current = null;
+    }
+    try {
+      setWorkspaceError(null);
+      const norm = normalizePraxisConfig(JSON.parse(JSON.stringify(config)));
+      await persistWorkspace(norm, null);
+      lastPersistedRef.current = sealPersistedPayload(norm, null);
+    } catch (err) {
+      setWorkspaceError(
+        err instanceof Error ? err.message : "Speichern fehlgeschlagen.",
+      );
+    }
+  };
+
+  /** Vergleichspunkt setzen oder überschreiben — wird serverseitig gespeichert. */
+  const rememberComparisonPoint = async () => {
+    if (persistTimerRef.current) {
+      clearTimeout(persistTimerRef.current);
+      persistTimerRef.current = null;
+    }
+    setRememberBusy(true);
+    setWorkspaceError(null);
+    try {
+      const normCfg = normalizePraxisConfig(JSON.parse(JSON.stringify(config)));
+      const savedAt = new Date().toISOString();
+      const newBaseline: Baseline = {
+        config: normCfg,
+        result: calculatePraxis(normCfg),
+        savedAt,
+      };
+      setConfig(normCfg);
+      setBaseline(newBaseline);
+      await persistWorkspace(normCfg, { savedAt, snapshot: normCfg });
+      lastPersistedRef.current = sealPersistedPayload(normCfg, newBaseline);
+    } catch (err) {
+      setWorkspaceError(
+        err instanceof Error ? err.message : "Speichern fehlgeschlagen.",
+      );
+    } finally {
+      setRememberBusy(false);
     }
   };
 
@@ -153,14 +275,6 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
     } finally {
       setScenarioSavePending(false);
     }
-  };
-
-  const saveBaseline = () => {
-    setBaseline({
-      config,
-      result,
-      savedAt: new Date().toISOString(),
-    });
   };
 
   const resetToBaseline = () => {
@@ -421,13 +535,15 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
           currentConfig={config}
           onLoad={loadScenario}
           baselineScenarioInlineRef={scenarioInlineRef}
+          workspaceError={workspaceError}
+          rememberBusy={rememberBusy}
           baseline={
             baseline
               ? {
                   state: "active",
                   savedLabel: formatBaselineLabel(baseline.savedAt),
                   onReset: resetToBaseline,
-                  onUpdate: saveBaseline,
+                  onUpdate: rememberComparisonPoint,
                   onClear: clearBaseline,
                   baselineScenario: {
                     inlineOpen: savingScenario,
@@ -455,7 +571,7 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
                     error: saveError,
                   },
                 }
-              : { state: "empty", onRemember: saveBaseline }
+              : { state: "empty", onRemember: rememberComparisonPoint }
           }
         />
       </main>

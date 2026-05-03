@@ -67,7 +67,7 @@ export function KpiBar({ result, baseline }: KpiBarProps) {
   const deltaLabel =
     delta === null
       ? ""
-      : `${delta > 0 ? "+" : "−"}${currencyFormatter.format(Math.abs(delta))} € ggü. Baseline`;
+      : `${delta > 0 ? "+" : "−"}${currencyFormatter.format(Math.abs(delta))} € ggü. Vergleich`;
 
   return (
     <div className="sticky top-[64px] z-30 mt-4">
