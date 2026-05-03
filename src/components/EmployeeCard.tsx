@@ -118,7 +118,6 @@ export function EmployeeCard({
               max={40}
               step={1}
               unit="h/Woche"
-              hint="0 (inaktiv) | 20 (Teilzeit) | 40 (Vollzeit)"
               onChange={(value) => updateEmployee("hours", value)}
             />
             <StepSlider
@@ -128,7 +127,6 @@ export function EmployeeCard({
               max={60}
               step={1}
               unit="€/h"
-              hint="16 € (Mindestlohn) | 25 € (Ø) | 38 € (Senior)"
               onChange={(value) => updateEmployee("rate", value)}
             />
             <StepSlider
@@ -162,7 +160,6 @@ export function EmployeeCard({
               max={10000}
               step={100}
               unit="€"
-              hint="0 € | 1.000 € (Standard) | 4.000 € (Spezialisierung)"
               onChange={(value) => updateEmployee("trainingCost", value)}
             />
           </div>

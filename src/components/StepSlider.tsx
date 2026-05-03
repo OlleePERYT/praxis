@@ -122,12 +122,17 @@ export function StepSlider({
   const display = `${formatDisplay(clamped, step)}${unit ? ` ${unit}` : ""}`;
 
   return (
-    <div className="mb-3 flex items-center gap-3 rounded-xl bg-brand-bg/50 px-4 py-3 transition-colors hover:bg-brand-bg/80">
-      <div className="min-w-[140px] shrink-0">
-        <div className="text-sm font-medium text-brand-text">{label}</div>
-        {hint ? (
-          <p className="mt-0.5 text-xs text-brand-muted">{hint}</p>
-        ) : null}
+    <div className="mb-3 rounded-xl bg-brand-bg/50 px-4 py-3 transition-colors hover:bg-brand-bg/80">
+      <div className="mb-2 flex items-baseline justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium text-brand-text">{label}</div>
+          {hint ? (
+            <div className="mt-0.5 text-xs text-brand-muted">{hint}</div>
+          ) : null}
+        </div>
+        <div className="ml-3 shrink-0 text-base font-bold tabular-nums text-brand-ink">
+          {display}
+        </div>
       </div>
 
       <div
@@ -138,7 +143,7 @@ export function StepSlider({
         aria-valuemax={max}
         aria-valuenow={clamped}
         aria-label={label}
-        className="relative h-8 flex-1 touch-none outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2 rounded-full"
+        className="relative flex min-h-[28px] w-full touch-none items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40 focus-visible:ring-offset-2"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
@@ -146,24 +151,22 @@ export function StepSlider({
         onLostPointerCapture={endDrag}
         onKeyDown={onKeyDown}
       >
-        <div className="pointer-events-none absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[var(--color-brand-border-soft)]" />
-        <div
-          className="pointer-events-none absolute left-0 top-1/2 h-1.5 max-w-full -translate-y-1/2 rounded-full"
-          style={{
-            width: `${pct}%`,
-            background: "var(--gradient-primary)",
-          }}
-        />
-        <div
-          className="pointer-events-none absolute top-1/2 z-[1] h-5 w-5 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border-[3px] border-brand-primary bg-white shadow-[0_2px_8px_rgba(45,106,79,0.3)] active:cursor-grabbing"
-          style={{
-            left: `${pct}%`,
-          }}
-        />
-      </div>
-
-      <div className="min-w-[70px] shrink-0 text-right text-sm font-bold tabular-nums text-brand-ink">
-        {display}
+        <div className="relative h-1.5 w-full rounded-full bg-[var(--color-brand-border-soft)]">
+          <div
+            className="pointer-events-none absolute inset-y-0 left-0 rounded-full"
+            style={{
+              width: `${pct}%`,
+              background: "var(--gradient-primary)",
+            }}
+          />
+          <div
+            className="pointer-events-none absolute top-1/2 z-[1] h-5 w-5 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border-[3px] border-brand-primary bg-white shadow-[0_2px_8px_rgba(45,106,79,0.3)] active:cursor-grabbing"
+            style={{
+              left: `${pct}%`,
+            }}
+            aria-hidden
+          />
+        </div>
       </div>
     </div>
   );
