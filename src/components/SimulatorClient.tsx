@@ -8,9 +8,11 @@ import { MetricsCard } from "./MetricsCard";
 import { PraxisCharts } from "./PraxisCharts";
 import { ProfitLoss } from "./ProfitLoss";
 import { RevenuePanel } from "./RevenuePanel";
-import { SachkostenPanel } from "./SachkostenPanel";
+import { SachkostenInner } from "./SachkostenInner";
 import { ScenarioPanel } from "./ScenarioPanel";
 import { StepSlider } from "./StepSlider";
+import Card from "./ui/Card";
+import Eyebrow from "./ui/Eyebrow";
 import { C } from "@/lib/colors";
 import { defaultEmployee, normalizePraxisConfig } from "@/lib/praxis-config";
 import type {
@@ -364,10 +366,14 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
                 />
               </div>
             </section>
-            <h2 className="text-xl font-semibold" style={{ color: C.primary }}>
-              Kosten
-            </h2>
-            <div className="grid gap-3">
+            <h2 className="mb-4 text-2xl font-bold text-brand-primary">Kosten</h2>
+
+            <Card variant="default" contentClassName="p-6">
+              <Eyebrow>Kostenstruktur</Eyebrow>
+              <h3 className="mb-4 mt-2 text-xl font-bold text-brand-ink">
+                Räume &amp; Sachkosten
+              </h3>
+
               <StepSlider
                 label="Miete pro Monat"
                 value={config.mieteMonat}
@@ -375,38 +381,35 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
                 max={5000}
                 step={50}
                 unit="€"
-                hint="500 € | 1.500 € | 3.000 €"
-                onChange={(mieteMonat) => setConfig((prev) => ({ ...prev, mieteMonat }))}
+                onChange={(mieteMonat) =>
+                  setConfig((prev) => ({ ...prev, mieteMonat }))
+                }
               />
-              <SachkostenPanel
+
+              <SachkostenInner
                 config={config.sachkosten}
                 onChange={updateSachkosten}
               />
+            </Card>
+
+            <Card variant="default" contentClassName="p-6" className="mt-6">
+              <Eyebrow>Inhaber-Vergütung</Eyebrow>
+              <h3 className="mb-4 mt-2 text-xl font-bold text-brand-ink">
+                Geschäftsführer-Gehalt
+              </h3>
+
               <StepSlider
                 label="GF-Gehalt pro Monat (nur GmbH)"
                 value={config.gfGehaltMonat}
                 min={0}
-                max={15000}
-                step={250}
+                max={10000}
+                step={100}
                 unit="€"
-                hint="0 € (kein GF-Gehalt) | 4.500 € | 8.000 €"
                 onChange={(gfGehaltMonat) =>
                   setConfig((prev) => ({ ...prev, gfGehaltMonat }))
                 }
               />
-              <StepSlider
-                label="Inhaberentnahme pro Monat (Einzelunt./GbR)"
-                value={config.inhaberEntnahmeMonat}
-                min={0}
-                max={15000}
-                step={250}
-                unit="€"
-                hint="0 € (keine Entnahme) | 3.000 € | 6.000 €"
-                onChange={(inhaberEntnahmeMonat) =>
-                  setConfig((prev) => ({ ...prev, inhaberEntnahmeMonat }))
-                }
-              />
-            </div>
+            </Card>
           </div>
         </div>
 

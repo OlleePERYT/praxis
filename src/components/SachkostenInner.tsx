@@ -10,11 +10,9 @@ import {
   sachkostenDetailToDirect,
   sachkostenDirectToDetail,
 } from "@/lib/praxis-config";
-import Card from "./ui/Card";
-import Eyebrow from "./ui/Eyebrow";
 import { StepSlider } from "./StepSlider";
 
-type SachkostenPanelProps = {
+type SachkostenInnerProps = {
   config: SachkostenConfig;
   onChange: (config: SachkostenConfig) => void;
 };
@@ -45,7 +43,7 @@ function ModePill({
   );
 }
 
-export function SachkostenPanel({ config, onChange }: SachkostenPanelProps) {
+export function SachkostenInner({ config, onChange }: SachkostenInnerProps) {
   const detailSum = config.mode === "detail" ? getSachkostenJahr(config) : null;
 
   useEffect(() => {
@@ -68,10 +66,7 @@ export function SachkostenPanel({ config, onChange }: SachkostenPanelProps) {
   };
 
   return (
-    <Card variant="default">
-      <Eyebrow>Sachkosten</Eyebrow>
-      <h3 className="mb-4 mt-4 text-xl font-bold text-brand-ink">Sachkosten</h3>
-
+    <>
       <div className="mb-6 inline-flex rounded-full bg-brand-bg p-1">
         <ModePill
           active={config.mode === "direct"}
@@ -162,15 +157,13 @@ export function SachkostenPanel({ config, onChange }: SachkostenPanelProps) {
             onChange={(value) => setDetailField("sonstiges", value)}
           />
 
-          <div
-            className="mt-4 rounded-xl border border-[var(--color-brand-border-accent)] bg-[var(--color-brand-surface-cool)] p-4"
-          >
+          <div className="mt-4 rounded-xl border border-[var(--color-brand-border-accent)] bg-[var(--color-brand-surface-cool)] p-4">
             <p className="text-base font-semibold text-brand-ink tabular-nums">
               Summe: {euro0.format(detailSum ?? 0)} €/Jahr
             </p>
           </div>
         </div>
       )}
-    </Card>
+    </>
   );
 }
