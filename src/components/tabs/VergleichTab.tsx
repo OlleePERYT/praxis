@@ -1,10 +1,21 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useMemo } from "react";
+import { ScenarioComparisonChart } from "@/components/ScenarioComparisonChart";
+import type { ScenarioComparisonTableRow } from "@/components/ScenarioComparisonTable";
+import { ScenarioComparisonTable } from "@/components/ScenarioComparisonTable";
+import type { ScenarioDto } from "@/components/ScenarioPanel";
 import Card from "@/components/ui/Card";
 import Eyebrow from "@/components/ui/Eyebrow";
+import type { PraxisConfig } from "@/lib/engine";
+import { computeScenarioKpis } from "@/lib/engine";
+import { normalizePraxisConfig } from "@/lib/praxis-config";
 
 type VergleichTabProps = {
+  currentConfig: PraxisConfig;
+  savedScenarios: ScenarioDto[];
+  onGoToCockpit: () => void;
   children: ReactNode;
   comparisonTable: ReactNode | null;
   showEmptyHint: boolean;
@@ -13,14 +24,58 @@ type VergleichTabProps = {
 };
 
 export function VergleichTab({
+  currentConfig,
+  savedScenarios,
+  onGoToCockpit,
   children,
   comparisonTable,
   showEmptyHint,
   rememberBusy,
   onRememberComparisonPoint,
 }: VergleichTabProps) {
+  const comparisonScenarios: ScenarioComparisonTableRow[] = useMemo(() => {
+    const currentRow: ScenarioComparisonTableRow = {
+      id: "current",
+      name: "Aktuell",
+      isCurrent: true,
+      kpis: computeScenarioKpis(currentConfig),
+    };
+
+    const rest = savedScenarios.flatMap((row) => {
+      try {
+        const raw = JSON.parse(row.data) as unknown;
+        const cfg = normalizePraxisConfig(raw);
+        const rowOut: ScenarioComparisonTableRow = {
+          id: String(row.id),
+          name: row.name,
+          isCurrent: false,
+          kpis: computeScenarioKpis(cfg),
+        };
+        return [rowOut];
+      } catch {
+        return [];
+      }
+    });
+
+    return [currentRow, ...rest];
+  }, [currentConfig, savedScenarios]);
+
+  const chartRows = useMemo(
+    () =>
+      comparisonScenarios.map((s) => ({
+        id: s.id,
+        name: s.name,
+        ueberschuss: s.kpis.ueberschuss,
+        isCurrent: s.isCurrent,
+      })),
+    [comparisonScenarios],
+  );
+
   return (
     <div className="space-y-6">
+      <ScenarioComparisonChart scenarios={chartRows} onGoToCockpit={onGoToCockpit} />
+      <ScenarioComparisonTable scenarios={comparisonScenarios} onGoToCockpit={onGoToCockpit} />
+
       {showEmptyHint ? (
         <Card variant="default" contentClassName="p-6">
           <Eyebrow>Hinweis</Eyebrow>

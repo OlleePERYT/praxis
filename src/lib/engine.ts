@@ -246,3 +246,32 @@ export function calculatePraxis(config: PraxisConfig): PraxisResult {
     employeeDetails,
   };
 }
+
+/** KPI-Auszug für Szenario-Vergleiche (nutzt {@link calculatePraxis}). */
+export function computeScenarioKpis(config: PraxisConfig): {
+  ueberschuss: number;
+  revenue: number;
+  totalCost: number;
+  personalCostRatio: number;
+  totalEffHours: number;
+  gkvAnteilProzent: number | null;
+} {
+  const r = calculatePraxis(config);
+  const totalEffHours = r.employeeDetails.reduce(
+    (sum, employee) => sum + employee.effHours,
+    0,
+  );
+  const gkvAnteilProzent =
+    config.revenue.mode === "mix"
+      ? Math.min(100, Math.max(0, config.revenue.gkvPct))
+      : null;
+
+  return {
+    ueberschuss: r.ueberschuss,
+    revenue: r.revenue,
+    totalCost: r.totalCost,
+    personalCostRatio: r.personalCostRatio,
+    totalEffHours,
+    gkvAnteilProzent,
+  };
+}

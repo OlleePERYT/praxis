@@ -1,11 +1,11 @@
 "use client";
 
 import type { RefObject } from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Card from "./ui/Card";
 import type { PraxisConfig } from "@/lib/engine";
 
-type ScenarioDto = {
+export type ScenarioDto = {
   id: number;
   name: string;
   data: string;
@@ -42,6 +42,9 @@ type ScenarioPanelProps = {
   onLoad: (config: unknown) => void;
   baseline: ScenarioPanelBaselineProps;
   baselineScenarioInlineRef: RefObject<HTMLDivElement | null>;
+  scenarios: ScenarioDto[];
+  scenariosLoading: boolean;
+  onScenariosMutated: () => Promise<void>;
   /** Fehler beim Speichern der Arbeitskonfiguration / des Vergleichspunkts */
   workspaceError?: string | null;
   /** Primäraktion „Vergleichspunkt setzen“ läuft */
@@ -62,59 +65,17 @@ export function ScenarioPanel({
   onLoad,
   baseline,
   baselineScenarioInlineRef,
+  scenarios,
+  scenariosLoading,
+  onScenariosMutated,
   workspaceError = null,
   rememberBusy = false,
 }: ScenarioPanelProps) {
-  const [scenarios, setScenarios] = useState<ScenarioDto[]>([]);
   const [saveExpanded, setSaveExpanded] = useState(false);
   const [saveName, setSaveName] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
 
   const maxReached = scenarios.length >= 3;
-
-  const loadScenarios = async () => {
-    try {
-      const response = await fetch("/api/scenarios", { cache: "no-store" });
-      if (!response.ok) {
-        throw new Error("Szenarien konnten nicht geladen werden.");
-      }
-
-      const data = (await response.json()) as ScenarioDto[];
-      setScenarios(data);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unbekannter Fehler.");
-    }
-  };
-
-  useEffect(() => {
-    let active = true;
-
-    fetch("/api/scenarios", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error("Szenarien konnten nicht geladen werden.");
-        }
-        const data = (await response.json()) as ScenarioDto[];
-        if (active) {
-          setScenarios(data);
-        }
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          setMessage(error instanceof Error ? error.message : "Unbekannter Fehler.");
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const handleSaveCurrent = async () => {
     const trimmedName = saveName.trim();
@@ -145,7 +106,11 @@ export function ScenarioPanel({
 
     setSaveName("");
     setSaveExpanded(false);
-    await loadScenarios();
+    try {
+      await onScenariosMutated();
+    } catch (error: unknown) {
+      setMessage(error instanceof Error ? error.message : "Szenarien konnten nicht aktualisiert werden.");
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -160,7 +125,11 @@ export function ScenarioPanel({
       return;
     }
 
-    await loadScenarios();
+    try {
+      await onScenariosMutated();
+    } catch (error: unknown) {
+      setMessage(error instanceof Error ? error.message : "Szenarien konnten nicht aktualisiert werden.");
+    }
   };
 
   const baselineScenarioControls =
@@ -339,7 +308,7 @@ export function ScenarioPanel({
         {message ? (
           <p className="text-sm text-red-600">{message}</p>
         ) : null}
-        {isLoading ? (
+        {scenariosLoading ? (
           <p className="text-sm text-brand-muted">Lade Szenarien…</p>
         ) : null}
 

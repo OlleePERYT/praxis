@@ -5,7 +5,7 @@ import { ComparisonTable } from "./ComparisonTable";
 import { hashToTab, type DashboardTabId } from "./DashboardTabs";
 import { KpiBar } from "./KpiBar";
 import { PracticeHeader } from "./PracticeHeader";
-import { ScenarioPanel } from "./ScenarioPanel";
+import { ScenarioPanel, type ScenarioDto } from "./ScenarioPanel";
 import { AuswertungTab } from "./tabs/AuswertungTab";
 import { CockpitTab } from "./tabs/CockpitTab";
 import { VergleichTab } from "./tabs/VergleichTab";
@@ -96,10 +96,26 @@ export function SimulatorClient({
   const [scenarioSavePending, setScenarioSavePending] = useState(false);
   const [scenarioSaveSuccessFlash, setScenarioSaveSuccessFlash] = useState(false);
 
+  const [scenarioRows, setScenarioRows] = useState<ScenarioDto[]>([]);
+  const [scenariosLoading, setScenariosLoading] = useState(true);
+
   const scenarioInlineRef = useRef<HTMLDivElement | null>(null);
   const successFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const result = useMemo(() => calculatePraxis(config), [config]);
+
+  const refreshScenarios = useCallback(async () => {
+    const response = await fetch("/api/scenarios", { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error("Szenarien konnten nicht geladen werden.");
+    }
+    const data = (await response.json()) as ScenarioDto[];
+    setScenarioRows(data);
+  }, []);
+
+  useEffect(() => {
+    void refreshScenarios().finally(() => setScenariosLoading(false));
+  }, [refreshScenarios]);
 
   const persistWorkspace = useCallback(
     async (cfg: PraxisConfig, anchor: { savedAt: string; snapshot: PraxisConfig } | null) => {
@@ -281,6 +297,11 @@ export function SimulatorClient({
 
       cancelScenarioInline();
       setScenarioSaveSuccessFlash(true);
+      try {
+        await refreshScenarios();
+      } catch {
+        /* Liste aktualisieren ist optional */
+      }
       if (successFlashTimeoutRef.current) {
         clearTimeout(successFlashTimeoutRef.current);
       }
@@ -443,6 +464,9 @@ export function SimulatorClient({
           ) : null}
           {activeTab === "vergleich" ? (
             <VergleichTab
+              currentConfig={config}
+              savedScenarios={scenarioRows}
+              onGoToCockpit={() => selectTab("cockpit")}
               showEmptyHint={baseline === null && config.refRevenue <= 0}
               rememberBusy={rememberBusy}
               onRememberComparisonPoint={rememberComparisonPoint}
@@ -462,6 +486,9 @@ export function SimulatorClient({
                 currentConfig={config}
                 onLoad={loadScenario}
                 baselineScenarioInlineRef={scenarioInlineRef}
+                scenarios={scenarioRows}
+                scenariosLoading={scenariosLoading}
+                onScenariosMutated={refreshScenarios}
                 workspaceError={workspaceError}
                 rememberBusy={rememberBusy}
                 baseline={
