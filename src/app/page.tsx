@@ -1,11 +1,12 @@
+import CTABand from "@/components/landing/CTABand";
+import CompareSection from "@/components/landing/CompareSection";
 import ContactForm from "@/components/landing/ContactForm";
+import FAQSection from "@/components/landing/FAQSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import Hero from "@/components/landing/Hero";
-import HowItWorks from "@/components/landing/HowItWorks";
 import LandingFooter from "@/components/landing/LandingFooter";
 import LandingNav from "@/components/landing/LandingNav";
-import PriceSection from "@/components/landing/PriceSection";
-import ProblemSection from "@/components/landing/ProblemSection";
+import TrustStrip from "@/components/landing/TrustStrip";
 
 export default function HomePage() {
   return (
@@ -13,10 +14,11 @@ export default function HomePage() {
       <LandingNav />
       <main>
         <Hero />
-        <ProblemSection />
+        <TrustStrip />
+        <CompareSection />
         <FeaturesSection />
-        <HowItWorks />
-        <PriceSection />
+        <FAQSection />
+        <CTABand />
         <ContactForm />
       </main>
       <LandingFooter />

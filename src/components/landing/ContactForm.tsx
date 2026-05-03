@@ -1,11 +1,11 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
+import Eyebrow from "@/components/ui/Eyebrow";
 
 type SubmitStatus = "idle" | "loading" | "success" | "error";
 
 type ContactFormProps = {
-  /** Support-Seite (kompakt) vs. Landing „Jetzt anfragen“ */
   variant?: "landing" | "support";
 };
 
@@ -61,36 +61,25 @@ export default function ContactForm({ variant = "landing" }: ContactFormProps) {
     }
   }
 
-  const inputClass =
-    "w-full rounded-lg border border-brand-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-primary";
+  const inputLanding =
+    "w-full rounded-xl border border-brand-surface bg-white px-4 py-3 text-brand-ink outline-none transition-colors placeholder:text-brand-muted focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20";
 
-  const idKontakt = isSupport ? undefined : "kontakt";
-  const outerClass = isSupport
-    ? ""
-    : "bg-brand-bg py-20";
-  const innerClass = isSupport
-    ? "mx-auto w-full max-w-xl"
-    : "mx-auto max-w-6xl px-4 md:px-6";
+  const inputSupport =
+    "w-full rounded-lg border border-brand-surface px-4 py-3 text-brand-ink outline-none transition-colors focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20";
 
-  return (
-    <div id={idKontakt} className={outerClass}>
-      <div className={innerClass}>
+  const ic = isSupport ? inputSupport : inputLanding;
+
+  if (isSupport) {
+    return (
+      <div className="mx-auto w-full max-w-xl">
         <h2 className="text-center text-2xl font-bold text-brand-ink">
-          {isSupport ? "Nachricht an den Support" : "Jetzt anfragen"}
+          Nachricht an den Support
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-center text-brand-text">
-          {isSupport
-            ? "Technische Fragen, Feedback oder Vertrags-Themen: Wir melden uns bei Ihnen."
-            : "Wir richten alles ein. Sie müssen nur das Formular ausfüllen."}
+          Technische Fragen, Feedback oder Vertrags-Themen: Wir melden uns bei
+          Ihnen.
         </p>
-
-        <div
-          className={
-            isSupport
-              ? "mx-auto mt-8 rounded-xl border border-brand-surface bg-white p-6 md:p-8"
-              : "mx-auto mt-10 max-w-xl rounded-xl border border-brand-surface bg-white p-8"
-          }
-        >
+        <div className="mx-auto mt-8 rounded-xl border border-brand-surface bg-white p-6 md:p-8">
           {status === "success" ? (
             <p className="text-center text-lg font-medium text-green-700">
               Vielen Dank! Wir melden uns bald.
@@ -105,99 +94,217 @@ export default function ContactForm({ variant = "landing" }: ContactFormProps) {
                   {errorMessage}
                 </p>
               ) : null}
-
+              <Field
+                label="Name"
+                id="support-contact-name"
+                type="text"
+                autoComplete="name"
+                required
+                disabled={status === "loading"}
+                value={name}
+                onChange={setName}
+                inputClass={ic}
+              />
+              <Field
+                label="Praxisname"
+                id="support-contact-praxisname"
+                type="text"
+                autoComplete="organization"
+                required
+                disabled={status === "loading"}
+                value={praxisname}
+                onChange={setPraxisname}
+                inputClass={ic}
+              />
+              <Field
+                label="E-Mail"
+                id="support-contact-email"
+                type="email"
+                autoComplete="email"
+                required
+                disabled={status === "loading"}
+                value={email}
+                onChange={setEmail}
+                inputClass={ic}
+              />
               <div>
                 <label
-                  htmlFor={isSupport ? "support-contact-name" : "contact-name"}
-                  className="text-sm font-medium text-brand-text"
-                >
-                  Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id={isSupport ? "support-contact-name" : "contact-name"}
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  required
-                  disabled={status === "loading"}
-                  value={name}
-                  onChange={(ev) => setName(ev.target.value)}
-                  className={`mt-2 ${inputClass}`}
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor={
-                    isSupport ? "support-contact-praxisname" : "contact-praxisname"
-                  }
-                  className="text-sm font-medium text-brand-text"
-                >
-                  Praxisname <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id={isSupport ? "support-contact-praxisname" : "contact-praxisname"}
-                  name="praxisname"
-                  type="text"
-                  autoComplete="organization"
-                  required
-                  disabled={status === "loading"}
-                  value={praxisname}
-                  onChange={(ev) => setPraxisname(ev.target.value)}
-                  className={`mt-2 ${inputClass}`}
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor={isSupport ? "support-contact-email" : "contact-email"}
-                  className="text-sm font-medium text-brand-text"
-                >
-                  E-Mail <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id={isSupport ? "support-contact-email" : "contact-email"}
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  disabled={status === "loading"}
-                  value={email}
-                  onChange={(ev) => setEmail(ev.target.value)}
-                  className={`mt-2 ${inputClass}`}
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor={isSupport ? "support-contact-message" : "contact-message"}
+                  htmlFor="support-contact-message"
                   className="text-sm font-medium text-brand-text"
                 >
                   Nachricht <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                  id={isSupport ? "support-contact-message" : "contact-message"}
+                  id="support-contact-message"
                   name="message"
                   rows={5}
                   required
                   disabled={status === "loading"}
                   value={message}
                   onChange={(ev) => setMessage(ev.target.value)}
-                  className={`mt-2 resize-y ${inputClass}`}
+                  className={`mt-2 resize-y ${ic}`}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={status === "loading"}
+                className="w-full rounded-lg bg-brand-primary px-8 py-4 font-semibold text-white transition-colors hover:bg-brand-accent disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Nachricht senden →
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div id="kontakt" className="bg-brand-bg py-24 md:py-[100px]">
+      <div className="mx-auto max-w-xl px-4 md:px-6">
+        <div className="text-center">
+          <Eyebrow>Jetzt anfragen</Eyebrow>
+          <h2 className="mt-4 text-3xl font-bold text-brand-ink md:text-4xl">
+            Wir richten alles ein.
+          </h2>
+          <p className="mx-auto mt-3 max-w-lg text-brand-text">
+            Sie füllen nur dieses Formular aus — wir melden uns mit einem
+            konkreten Vorschlag.
+          </p>
+        </div>
+
+        <div className="mt-12 rounded-2xl border border-brand-surface bg-white p-8 shadow-sm">
+          {status === "success" ? (
+            <p className="text-center text-lg font-medium text-green-700">
+              Vielen Dank! Wir melden uns bald.
+            </p>
+          ) : (
+            <form className="space-y-6" onSubmit={handleSubmit} noValidate>
+              {status === "error" && errorMessage ? (
+                <p
+                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                  role="alert"
+                >
+                  {errorMessage}
+                </p>
+              ) : null}
+
+              <Field
+                label="Name"
+                id="contact-name"
+                type="text"
+                autoComplete="name"
+                required
+                disabled={status === "loading"}
+                value={name}
+                onChange={setName}
+                inputClass={inputLanding}
+                labelBold
+              />
+              <Field
+                label="Praxisname"
+                id="contact-praxisname"
+                type="text"
+                autoComplete="organization"
+                required
+                disabled={status === "loading"}
+                value={praxisname}
+                onChange={setPraxisname}
+                inputClass={inputLanding}
+                labelBold
+              />
+              <Field
+                label="E-Mail"
+                id="contact-email"
+                type="email"
+                autoComplete="email"
+                required
+                disabled={status === "loading"}
+                value={email}
+                onChange={setEmail}
+                inputClass={inputLanding}
+                labelBold
+              />
+              <div>
+                <label
+                  htmlFor="contact-message"
+                  className="text-sm font-semibold text-brand-text"
+                >
+                  Nachricht <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  id="contact-message"
+                  name="message"
+                  rows={5}
+                  required
+                  disabled={status === "loading"}
+                  value={message}
+                  onChange={(ev) => setMessage(ev.target.value)}
+                  className={`mt-2 resize-y ${inputLanding}`}
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={status === "loading"}
-                className="w-full rounded-lg bg-brand-primary px-8 py-4 font-semibold text-white transition-colors hover:bg-brand-accent disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-xl bg-gradient-to-br from-brand-primary to-[#3a8763] px-8 py-4 font-semibold text-white shadow-[var(--shadow-glow-sm)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-md)] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSupport ? "Nachricht senden →" : "Jetzt anfragen →"}
+                Jetzt anfragen →
               </button>
             </form>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  id,
+  type,
+  autoComplete,
+  required,
+  disabled,
+  value,
+  onChange,
+  inputClass,
+  labelBold,
+}: {
+  label: string;
+  id: string;
+  type: string;
+  autoComplete: string;
+  required: boolean;
+  disabled: boolean;
+  value: string;
+  onChange: (v: string) => void;
+  inputClass: string;
+  labelBold?: boolean;
+}) {
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className={
+          labelBold
+            ? "text-sm font-semibold text-brand-text"
+            : "text-sm font-medium text-brand-text"
+        }
+      >
+        {label} <span className="text-red-500">*</span>
+      </label>
+      <input
+        id={id}
+        name={id}
+        type={type}
+        autoComplete={autoComplete}
+        required={required}
+        disabled={disabled}
+        value={value}
+        onChange={(ev) => onChange(ev.target.value)}
+        className={`mt-2 ${inputClass}`}
+      />
     </div>
   );
 }
