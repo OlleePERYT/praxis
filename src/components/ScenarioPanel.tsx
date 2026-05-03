@@ -3,7 +3,6 @@
 import type { RefObject } from "react";
 import { useEffect, useState } from "react";
 import Card from "./ui/Card";
-import Eyebrow from "./ui/Eyebrow";
 import type { PraxisConfig } from "@/lib/engine";
 
 type ScenarioDto = {
@@ -163,10 +162,7 @@ export function ScenarioPanel({
 
   return (
     <Card variant="default">
-      <Eyebrow>Szenarien</Eyebrow>
-      <h3 className="mb-4 mt-4 text-xl font-bold text-brand-ink">
-        Was-wäre-wenn
-      </h3>
+      <h3 className="mb-4 text-xl font-bold text-brand-ink">Was-wäre-wenn</h3>
 
       <div className="rounded-xl bg-[var(--color-brand-surface-cool)] p-4">
         {baseline.state === "empty" ? (

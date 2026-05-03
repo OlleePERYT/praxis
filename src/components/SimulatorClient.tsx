@@ -12,7 +12,6 @@ import { SachkostenInner } from "./SachkostenInner";
 import { ScenarioPanel } from "./ScenarioPanel";
 import { StepSlider } from "./StepSlider";
 import Card from "./ui/Card";
-import Eyebrow from "./ui/Eyebrow";
 import { defaultEmployee, normalizePraxisConfig } from "@/lib/praxis-config";
 import type {
   Employee,
@@ -321,8 +320,7 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
             <h2 className="mb-0 text-2xl font-bold text-brand-primary">Erlöse</h2>
             <RevenuePanel config={config.revenue} onChange={updateRevenue} />
             <Card variant="default" contentClassName="p-6">
-              <Eyebrow>Weitere Einnahmen</Eyebrow>
-              <h3 className="mb-4 mt-2 text-xl font-bold text-brand-ink">
+              <h3 className="mb-4 text-xl font-bold text-brand-ink">
                 Sonstige Erträge
               </h3>
               <div className="space-y-3">
@@ -344,7 +342,6 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
                   max={20000}
                   step={100}
                   unit="€"
-                  hint="Verkaufserlöse minus Wareneinkauf. Typische Marge 30–50 %."
                   onChange={(handelswareJahr) =>
                     setConfig((prev) => ({ ...prev, handelswareJahr }))
                   }
@@ -354,8 +351,7 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
             <h2 className="mb-0 text-2xl font-bold text-brand-primary">Kosten</h2>
 
             <Card variant="default" contentClassName="p-6">
-              <Eyebrow>Kostenstruktur</Eyebrow>
-              <h3 className="mb-4 mt-2 text-xl font-bold text-brand-ink">
+              <h3 className="mb-4 text-xl font-bold text-brand-ink">
                 Räume &amp; Sachkosten
               </h3>
 
@@ -378,8 +374,7 @@ export function SimulatorClient({ initialConfig }: SimulatorClientProps) {
             </Card>
 
             <Card variant="default" contentClassName="p-6" className="mt-6">
-              <Eyebrow>Geschäftsführung</Eyebrow>
-              <h3 className="mb-4 mt-2 text-xl font-bold text-brand-ink">
+              <h3 className="mb-4 text-xl font-bold text-brand-ink">
                 Geschäftsführer-Gehalt
               </h3>
 

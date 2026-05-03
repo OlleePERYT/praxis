@@ -10,7 +10,6 @@ import {
   Tooltip,
 } from "recharts";
 import Card from "./ui/Card";
-import Eyebrow from "./ui/Eyebrow";
 
 type Slice = { name: string; value: number };
 
@@ -188,8 +187,7 @@ export function PraxisCharts({ result }: PraxisChartsProps) {
 
   return (
     <Card variant="default" contentClassName="p-6">
-      <Eyebrow>Visualisierung</Eyebrow>
-      <h3 className="mb-4 mt-4 text-xl font-bold text-brand-ink">
+      <h3 className="mb-4 text-xl font-bold text-brand-ink">
         Kosten und Erlöse im Überblick
       </h3>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

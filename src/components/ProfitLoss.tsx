@@ -6,7 +6,6 @@ import type {
   SachkostenConfig,
 } from "@/lib/engine";
 import Card from "./ui/Card";
-import Eyebrow from "./ui/Eyebrow";
 import GradientNumber from "./ui/GradientNumber";
 
 const euro = new Intl.NumberFormat("de-DE", {
@@ -97,8 +96,9 @@ export function ProfitLoss({ result, employees, sachkosten }: ProfitLossProps) {
 
   return (
     <Card variant="default">
-      <Eyebrow>Gewinn- und Verlustrechnung</Eyebrow>
-      <h3 className="mb-4 mt-4 text-xl font-bold text-brand-ink">Praxis-P&amp;L</h3>
+      <h3 className="mb-4 text-xl font-bold text-brand-ink">
+        Gewinn- und Verlustrechnung
+      </h3>
 
       <div>
         <SectionHeader title="Umsatz" />

@@ -7,7 +7,6 @@ import {
   type RevenueConfigMix,
 } from "@/lib/engine";
 import Card from "./ui/Card";
-import Eyebrow from "./ui/Eyebrow";
 import { StepSlider } from "./StepSlider";
 
 type RevenuePanelProps = {
@@ -97,10 +96,7 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
 
   return (
     <Card variant="default">
-      <Eyebrow>Modell</Eyebrow>
-      <h3 className="mb-4 mt-4 text-xl font-bold text-brand-ink">
-        Erlös-Modell
-      </h3>
+      <h3 className="mb-4 text-xl font-bold text-brand-ink">Erlös-Modell</h3>
 
       <div className="mb-6 inline-flex rounded-full bg-brand-bg p-1">
         <ModePill
@@ -125,7 +121,6 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
           max={200}
           step={1}
           unit="€/h"
-          hint="35 € (nur GKV) | 65 € (Mix) | 85 € (Premium)"
           onChange={(revPerHour) => onChange({ mode: "direct", revPerHour })}
         />
       ) : (
@@ -137,7 +132,6 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
             max={100}
             step={5}
             unit="%"
-            hint="0 % | 60 % (typisch) | 100 %"
             onChange={(gkvPct) => onChange({ ...config, gkvPct })}
           />
           <StepSlider
@@ -156,7 +150,6 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
             max={100}
             step={5}
             unit="%"
-            hint="0 % | 5 % (typisch) | 20 %"
             onChange={(bgPct) => onChange({ ...config, bgPct })}
           />
           <p className="mb-3 px-4 text-xs text-brand-muted">
@@ -198,7 +191,6 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
             max={100}
             step={0.5}
             unit="€"
-            hint="meist über GKV, unter PKV"
             onChange={(bgPerTreatment) =>
               onChange({ ...config, bgPerTreatment })
             }
@@ -221,7 +213,6 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
             max={4}
             step={0.1}
             unit="Beh./Std."
-            hint="1,0 … 4,0"
             onChange={(treatmentsPerHour) =>
               onChange({ ...config, treatmentsPerHour })
             }
@@ -233,7 +224,6 @@ export function RevenuePanel({ config, onChange }: RevenuePanelProps) {
             max={95}
             step={1}
             unit="%"
-            hint="50 % … 95 %"
             onChange={(utilization) => onChange({ ...config, utilization })}
           />
 
