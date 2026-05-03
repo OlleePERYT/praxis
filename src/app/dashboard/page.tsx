@@ -67,6 +67,7 @@ export default async function DashboardPage() {
       <div className="relative z-10 flex min-h-screen flex-col">
         <SimulatorClient
           practiceName={practice.name}
+          practiceSubdomain={practice.subdomain}
           initialConfig={initialConfig}
           initialBaseline={initialBaseline}
         />

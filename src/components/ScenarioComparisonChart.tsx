@@ -106,7 +106,7 @@ export function ScenarioComparisonChart({
         Praxisüberschuss im Vergleich
       </h3>
       <p className="mb-4 text-xs text-brand-muted">
-        Gleiche Reihenfolge wie die Tabelle (Aktuell zuerst). Spalten gespeicherter Szenarien können Sie dort tauschen.
+        Gleiche Reihenfolge wie die Tabelle (Aktuell zuerst). Spalten gespeicherter Szenarien können Sie dort tauschen; die Reihenfolge wird im Browser gespeichert.
       </p>
       <div style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">

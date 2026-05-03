@@ -39,6 +39,7 @@ function formatBaselineLabel(iso: string): string {
 
 type SimulatorClientProps = {
   practiceName: string;
+  practiceSubdomain: string;
   initialConfig: PraxisConfig;
   initialBaseline?: Baseline | null;
 };
@@ -54,6 +55,7 @@ function sealPersistedPayload(cfg: PraxisConfig, b: Baseline | null): string {
 
 export function SimulatorClient({
   practiceName,
+  practiceSubdomain,
   initialConfig,
   initialBaseline = null,
 }: SimulatorClientProps) {
@@ -103,6 +105,11 @@ export function SimulatorClient({
   const successFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const result = useMemo(() => calculatePraxis(config), [config]);
+
+  const comparisonScenarioColumnStorageKey = useMemo(
+    () => `pk.vergleich-scenario-columns.${practiceSubdomain}`,
+    [practiceSubdomain],
+  );
 
   const refreshScenarios = useCallback(async () => {
     const response = await fetch("/api/scenarios", { cache: "no-store" });
@@ -464,6 +471,7 @@ export function SimulatorClient({
           ) : null}
           {activeTab === "vergleich" ? (
             <VergleichTab
+              comparisonScenarioColumnStorageKey={comparisonScenarioColumnStorageKey}
               currentConfig={config}
               savedScenarios={scenarioRows}
               onGoToCockpit={() => selectTab("cockpit")}

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScenarioComparisonChart } from "@/components/ScenarioComparisonChart";
 import type { ScenarioComparisonTableRow } from "@/components/ScenarioComparisonTable";
 import { ScenarioComparisonTable } from "@/components/ScenarioComparisonTable";
@@ -13,6 +13,7 @@ import { computeScenarioKpis } from "@/lib/engine";
 import { normalizePraxisConfig } from "@/lib/praxis-config";
 
 type VergleichTabProps = {
+  comparisonScenarioColumnStorageKey: string;
   currentConfig: PraxisConfig;
   savedScenarios: ScenarioDto[];
   onGoToCockpit: () => void;
@@ -24,6 +25,7 @@ type VergleichTabProps = {
 };
 
 export function VergleichTab({
+  comparisonScenarioColumnStorageKey,
   currentConfig,
   savedScenarios,
   onGoToCockpit,
@@ -64,6 +66,19 @@ export function VergleichTab({
   /** Explizite Spaltenreihenfolge nur für gespeicherte Szenarien (IDs). „Aktuell“ bleibt immer erste Datenspalte. */
   const [savedColumnOrder, setSavedColumnOrder] = useState<string[]>([]);
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(comparisonScenarioColumnStorageKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as unknown;
+      if (!Array.isArray(parsed)) return;
+      const ids = parsed.filter((x): x is string => typeof x === "string");
+      if (ids.length > 0) setSavedColumnOrder(ids);
+    } catch {
+      /* ignore corrupt storage */
+    }
+  }, [comparisonScenarioColumnStorageKey]);
+
   const normalizedSavedIds = useMemo(() => savedRows.map((r) => r.id), [savedRows]);
 
   const effectiveSavedIds = useMemo(() => {
@@ -96,10 +111,15 @@ export function VergleichTab({
         } else if (direction === "right" && idx < next.length - 1) {
           [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
         }
+        try {
+          localStorage.setItem(comparisonScenarioColumnStorageKey, JSON.stringify(next));
+        } catch {
+          /* Quota oder Private Mode */
+        }
         return next;
       });
     },
-    [savedRows],
+    [comparisonScenarioColumnStorageKey, savedRows],
   );
 
   const chartRows = useMemo(
