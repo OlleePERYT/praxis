@@ -31,8 +31,11 @@ function MiniMetric({
   valueClassName?: string;
 }) {
   return (
-    <div className="rounded-xl border border-[var(--color-brand-border-soft)] bg-white/50 px-3 py-3 backdrop-blur-sm">
-      <div className="text-xs font-semibold uppercase tracking-wider text-brand-muted">
+    <div className="min-w-0 rounded-xl border border-[var(--color-brand-border-soft)] bg-white/50 px-3 py-3 backdrop-blur-sm">
+      <div
+        className="hyphens-auto text-[11px] font-semibold uppercase leading-snug tracking-wide text-brand-muted [overflow-wrap:anywhere] sm:text-xs sm:tracking-wider"
+        lang="de"
+      >
         {label}
       </div>
       <div
@@ -120,7 +123,7 @@ export function KpiBar({ result, baseline }: KpiBarProps) {
             ) : null}
           </div>
 
-          <div className="grid w-full shrink-0 grid-cols-3 gap-3 sm:gap-4 md:max-w-md md:flex-1">
+          <div className="grid w-full min-w-0 shrink-0 grid-cols-3 gap-3 sm:gap-4 md:max-w-md md:flex-1 [&>*]:min-w-0">
             <MiniMetric label="Umsatz" value={formatEuro(result.revenue)} />
             <MiniMetric label="Kosten" value={formatEuro(result.totalCost)} />
             <MiniMetric
