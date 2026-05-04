@@ -161,7 +161,7 @@ export function EmployeeCard({
       {!isExpanded && hasMetaBadges ? (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {employmentType === "minijob" ? <MetaBadge>Minijob</MetaBadge> : null}
-          {wageMode === "monthly" ? <MetaBadge>Monatslohn</MetaBadge> : null}
+          {wageMode === "monthly" ? <MetaBadge>Monatsbrutto</MetaBadge> : null}
           {employerCostMode === "manual" ? (
             <MetaBadge>AG-Kosten manuell</MetaBadge>
           ) : null}
