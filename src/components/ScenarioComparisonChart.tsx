@@ -24,6 +24,8 @@ export type ScenarioComparisonChartRow = {
 type ScenarioComparisonChartProps = {
   scenarios: ScenarioComparisonChartRow[];
   onGoToCockpit?: () => void;
+  /** Gespeicherte Szenarien gesamt (inkl. ausgeblendete), für den Hinweis wenn nur „Aktuell“ im Datensatz ist. */
+  savedScenarioTotalCount?: number;
 };
 
 const euro0 = new Intl.NumberFormat("de-DE", {
@@ -65,10 +67,13 @@ function BarFill(row: ScenarioComparisonChartRow & { displayName: string }): str
 export function ScenarioComparisonChart({
   scenarios,
   onGoToCockpit,
+  savedScenarioTotalCount,
 }: ScenarioComparisonChartProps) {
   const hasSavedOnlyCurrent = scenarios.filter((s) => !s.isCurrent).length === 0;
 
   if (hasSavedOnlyCurrent) {
+    const allSavedHidden = (savedScenarioTotalCount ?? 0) > 0;
+
     return (
       <Card variant="default" contentClassName="p-6">
         <Eyebrow>Übersicht</Eyebrow>
@@ -76,8 +81,17 @@ export function ScenarioComparisonChart({
           Praxisüberschuss im Vergleich
         </h3>
         <p className="max-w-xl text-sm leading-relaxed text-brand-text">
-          Speichern Sie ein Szenario, um Vergleiche zu sehen. Nutzen Sie „Aktuellen Stand merken“ und
-          vergleichen Sie dann mit zukünftigen Änderungen.
+          {allSavedHidden ? (
+            <>
+              Alle gespeicherten Szenarien sind aus dem Vergleich ausgeblendet. Nutzen Sie die Leiste
+              unter diesem Kasten, um sie wieder einzublenden.
+            </>
+          ) : (
+            <>
+              Speichern Sie ein Szenario, um Vergleiche zu sehen. Nutzen Sie „Aktuellen Stand merken“ und
+              vergleichen Sie dann mit zukünftigen Änderungen.
+            </>
+          )}
         </p>
         {onGoToCockpit ? (
           <button
@@ -106,7 +120,9 @@ export function ScenarioComparisonChart({
         Praxisüberschuss im Vergleich
       </h3>
       <p className="mb-4 text-xs text-brand-muted">
-        Gleiche Reihenfolge wie die Tabelle (Aktuell zuerst). Spalten gespeicherter Szenarien können Sie dort tauschen; die Reihenfolge wird im Browser gespeichert.
+        Gleiche Reihenfolge wie die Tabelle (Aktuell zuerst). Gespeicherte Szenarien können Sie dort
+        aus dem Vergleich ausblenden oder die Spalten tauschen — Reihenfolge und Auswahl werden im
+        Browser gespeichert.
       </p>
       <div style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">

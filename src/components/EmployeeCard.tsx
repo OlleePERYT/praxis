@@ -1,6 +1,12 @@
 "use client";
 
-import { getEmployeePersonnelCostYear, type Employee } from "@/lib/engine";
+import {
+  getEmployeePersonnelCostYear,
+  type Employee,
+  type EmploymentType,
+  type EmployerCostMode,
+  type WageMode,
+} from "@/lib/engine";
 import Card from "./ui/Card";
 import { StepSlider } from "./StepSlider";
 
@@ -53,6 +59,50 @@ function TrashIcon() {
   );
 }
 
+/** Gleiches Markup wie RevenuePanel / SachkostenInner (Mode-Umschalter). */
+function ModePill({
+  active,
+  children,
+  onClick,
+  className,
+}: {
+  active: boolean;
+  children: string;
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`min-w-0 flex-1 rounded-full px-4 py-2 text-sm font-semibold transition-all sm:flex-none ${active ? "bg-white text-brand-primary shadow-sm" : "text-brand-muted hover:text-brand-ink"} ${className ?? ""}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function FieldHint({ text }: { text: string }) {
+  return (
+    <span
+      className="inline-flex h-5 w-5 shrink-0 cursor-help items-center justify-center rounded-full border border-[var(--color-brand-border-soft)] text-[10px] font-bold leading-none text-brand-muted"
+      title={text}
+      aria-label={text}
+      role="img"
+    >
+      ?
+    </span>
+  );
+}
+
+function MetaBadge({ children }: { children: string }) {
+  return (
+    <span className="rounded-full border border-brand-primary/15 bg-brand-primary/5 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-brand-primary">
+      {children}
+    </span>
+  );
+}
+
 export function EmployeeCard({
   employee,
   index,
@@ -65,12 +115,28 @@ export function EmployeeCard({
     employee.name.trim().length > 0 ? employee.name : `Therapeut:in ${index + 1}`;
   const cost = getEmployeePersonnelCostYear(employee);
 
+  const employmentType: EmploymentType = employee.employmentType ?? "festangestellt";
+  const wageMode: WageMode = employee.wageMode ?? "hourly";
+  const employerCostMode: EmployerCostMode = employee.employerCostMode ?? "factor";
+
+  const hasMetaBadges =
+    employmentType === "minijob" ||
+    wageMode === "monthly" ||
+    employerCostMode === "manual";
+
   const updateEmployee = (field: keyof Employee, value: string | number) => {
     onChange(index, {
       ...employee,
       [field]: value,
     });
   };
+
+  const patchEmployee = (patch: Partial<Employee>) => {
+    onChange(index, { ...employee, ...patch });
+  };
+
+  const monthlyGross = employee.monthlyGross ?? 0;
+  const employerCostManualMonat = employee.employerCostManualMonat ?? 0;
 
   return (
     <Card variant="default" contentClassName="p-4">
@@ -92,6 +158,16 @@ export function EmployeeCard({
         </button>
       </div>
 
+      {!isExpanded && hasMetaBadges ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {employmentType === "minijob" ? <MetaBadge>Minijob</MetaBadge> : null}
+          {wageMode === "monthly" ? <MetaBadge>Monatslohn</MetaBadge> : null}
+          {employerCostMode === "manual" ? (
+            <MetaBadge>AG-Kosten manuell</MetaBadge>
+          ) : null}
+        </div>
+      ) : null}
+
       {isExpanded ? (
         <div className="relative mt-4 border-t border-[var(--color-brand-border-soft)] pt-4 pb-12">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -111,6 +187,73 @@ export function EmployeeCard({
               />
             </div>
 
+            <div className="md:col-span-2">
+              <div className="mb-1 flex items-center gap-1.5">
+                <label
+                  className="text-sm text-brand-muted"
+                  htmlFor={`employee-employment-${index}`}
+                >
+                  Beschäftigungsart
+                </label>
+                <FieldHint text="Festangestellt: AG-Faktor 1,21 (regulärer SV-Aufschlag). Minijob: AG-Faktor 1,32 (gewerbliche Pauschalabgaben 2026 inkl. BG)." />
+              </div>
+              <select
+                id={`employee-employment-${index}`}
+                value={employmentType}
+                onChange={(event) =>
+                  patchEmployee({
+                    employmentType: event.target.value as EmploymentType,
+                  })
+                }
+                className="w-full rounded-md border border-brand-surface bg-white px-3 py-2 text-sm text-brand-ink"
+              >
+                <option value="festangestellt">Festangestellt</option>
+                <option value="minijob">Minijob</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <div className="mb-2 flex items-center gap-1.5">
+                <span className="text-sm text-brand-muted">Lohnform</span>
+                <FieldHint text="Stundenlohn: Stundensatz × Wochenstunden × 52. Monatslohn: monatliches Bruttogehalt × 12." />
+              </div>
+              <div className="flex w-full rounded-full bg-brand-bg p-1 sm:inline-flex sm:w-auto">
+                <ModePill
+                  active={wageMode === "hourly"}
+                  onClick={() => patchEmployee({ wageMode: "hourly" })}
+                >
+                  Stundenlohn
+                </ModePill>
+                <ModePill
+                  active={wageMode === "monthly"}
+                  onClick={() => patchEmployee({ wageMode: "monthly" })}
+                >
+                  Monatslohn
+                </ModePill>
+              </div>
+            </div>
+
+            <div className="md:col-span-2">
+              <div className="mb-2 flex items-center gap-1.5">
+                <span className="text-sm text-brand-muted">AG-Nebenkosten</span>
+                <FieldHint text="Pauschal: AG-Faktor je nach Beschäftigungsart. Manuell: AG-Nebenkosten in €/Monat selbst eintragen (z. B. aus der Lohnabrechnung)." />
+              </div>
+              <div className="flex w-full rounded-full bg-brand-bg p-1 sm:inline-flex sm:w-auto">
+                <ModePill
+                  active={employerCostMode === "factor"}
+                  onClick={() => patchEmployee({ employerCostMode: "factor" })}
+                >
+                  Pauschal
+                </ModePill>
+                <ModePill
+                  active={employerCostMode === "manual"}
+                  onClick={() => patchEmployee({ employerCostMode: "manual" })}
+                >
+                  Manuell
+                </ModePill>
+              </div>
+            </div>
+
             <StepSlider
               label="Wochenstunden"
               value={employee.hours}
@@ -120,15 +263,45 @@ export function EmployeeCard({
               unit="h/Woche"
               onChange={(value) => updateEmployee("hours", value)}
             />
-            <StepSlider
-              label="Stundenlohn"
-              value={employee.rate}
-              min={12}
-              max={60}
-              step={1}
-              unit="€/h"
-              onChange={(value) => updateEmployee("rate", value)}
-            />
+
+            {wageMode === "hourly" ? (
+              <StepSlider
+                label="Stundenlohn"
+                value={employee.rate}
+                min={12}
+                max={60}
+                step={1}
+                unit="€/h"
+                onChange={(value) => updateEmployee("rate", value)}
+              />
+            ) : (
+              <StepSlider
+                label="Monatsbruttogehalt"
+                value={monthlyGross}
+                min={0}
+                max={6000}
+                step={50}
+                unit="€/Monat"
+                onChange={(value) => updateEmployee("monthlyGross", value)}
+              />
+            )}
+
+            {employerCostMode === "manual" ? (
+              <div className="md:col-span-2">
+                <StepSlider
+                  label="AG-Nebenkosten"
+                  value={employerCostManualMonat}
+                  min={0}
+                  max={3000}
+                  step={100}
+                  unit="€/Monat"
+                  onChange={(value) =>
+                    updateEmployee("employerCostManualMonat", value)
+                  }
+                />
+              </div>
+            ) : null}
+
             <StepSlider
               label="Urlaubstage"
               value={employee.vacation}

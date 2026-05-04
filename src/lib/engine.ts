@@ -1,9 +1,23 @@
 import type { BrandingConfig } from "@/lib/branding";
 
 const AG = 1.21;
+const AG_MINIJOB = 1.32;
 const WEEKS = 52;
 /** Jahresfixkosten ohne Miete (Default Direct-Modus); Wert unverändert lassen. */
 export const SACH_OHNE_MIETE = 24020;
+
+export type EmploymentType = "festangestellt" | "minijob";
+export type WageMode = "hourly" | "monthly";
+export type EmployerCostMode = "factor" | "manual";
+
+/**
+ * AG-Faktor je Beschäftigungsart.
+ * - festangestellt: 1.21 (Pauschalaufschlag SV-AG-Anteil)
+ * - minijob: 1.32 (gewerblicher Minijob 2026: ~31,17 % Minijob-Zentrale + ~1 % BG)
+ */
+export function agFactor(type: EmploymentType | undefined): number {
+  return type === "minijob" ? AG_MINIJOB : AG;
+}
 
 export interface Employee {
   name: string;
@@ -15,11 +29,41 @@ export interface Employee {
   training: number;
   /** Weiterbildungskosten pro Jahr (Sachkosten SKR03/04, nicht Personalkosten). */
   trainingCost: number;
+  /** Beschäftigungsart; Default "festangestellt" (AG-Faktor 1.21). */
+  employmentType?: EmploymentType;
+  /** Eingabe-Form Lohn; Default "hourly" (Status quo: rate × hours × 52). */
+  wageMode?: WageMode;
+  /** Bruttomonatsgehalt; nur wirksam wenn wageMode === "monthly". */
+  monthlyGross?: number;
+  /** Form der AG-Nebenkosten; Default "factor" (Pauschal-Aufschlag via agFactor). */
+  employerCostMode?: EmployerCostMode;
+  /** Manuelle AG-Nebenkosten pro Monat; nur wirksam wenn employerCostMode === "manual". */
+  employerCostManualMonat?: number;
 }
 
-/** Jahres-Personalkosten (Brutto-Stunden × 52 × AG); identisch zur MA-Zeile in calculatePraxis. */
+/** Jahresbrutto (vor AG-Aufschlag) je Mitarbeiter:in. */
+function getEmployeeBruttoYear(employee: Employee): number {
+  if (employee.wageMode === "monthly") {
+    return (employee.monthlyGross ?? 0) * 12;
+  }
+  return employee.rate * employee.hours * WEEKS;
+}
+
+/** AG-Nebenkosten/Jahr je Mitarbeiter:in (Pauschal-Aufschlag oder manueller Wert). */
+function getEmployeeAgAufschlagYear(employee: Employee): number {
+  if (employee.employerCostMode === "manual") {
+    return (employee.employerCostManualMonat ?? 0) * 12;
+  }
+  const brutto = getEmployeeBruttoYear(employee);
+  return brutto * (agFactor(employee.employmentType) - 1);
+}
+
+/**
+ * Jahres-Personalkosten (Brutto + AG-Aufschlag).
+ * Mit Default-Feldern äquivalent zu rate × hours × 52 × AG.
+ */
 export function getEmployeePersonnelCostYear(employee: Employee): number {
-  return employee.rate * employee.hours * WEEKS * AG;
+  return getEmployeeBruttoYear(employee) + getEmployeeAgAufschlagYear(employee);
 }
 
 export interface SachkostenConfigDirect {
@@ -177,7 +221,7 @@ export function calculatePraxis(config: PraxisConfig): PraxisResult {
       (employee.vacation + employee.sick + employee.training) / 5;
     const effWeeks = WEEKS - offWeeks;
     const effHours = employee.hours * effWeeks;
-    const cost = employee.rate * employee.hours * WEEKS * AG;
+    const cost = getEmployeePersonnelCostYear(employee);
 
     return {
       name: employee.name,

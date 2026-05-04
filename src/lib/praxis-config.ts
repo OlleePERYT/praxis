@@ -2,12 +2,15 @@ import type { BrandingConfig } from "@/lib/branding";
 import {
   SACH_OHNE_MIETE,
   type Employee,
+  type EmploymentType,
+  type EmployerCostMode,
   type PraxisConfig,
   type RevenueConfigDirect,
   type RevenueConfigMix,
   type SachkostenConfig,
   type SachkostenConfigDetail,
   type SachkostenConfigDirect,
+  type WageMode,
 } from "@/lib/engine";
 
 const defaultRevenue: RevenueConfigDirect = {
@@ -24,6 +27,12 @@ const DEFAULT_SACHKOSTEN_DETAIL = {
   sonstiges: 9500,
 } as const;
 
+const DEFAULT_EMPLOYMENT_TYPE: EmploymentType = "festangestellt";
+const DEFAULT_WAGE_MODE: WageMode = "hourly";
+const DEFAULT_MONTHLY_GROSS = 0;
+const DEFAULT_EMPLOYER_COST_MODE: EmployerCostMode = "factor";
+const DEFAULT_EMPLOYER_COST_MANUAL_MONAT = 0;
+
 export function defaultEmployee(index: number): Employee {
   return {
     name: `Therapeut:in ${index + 1}`,
@@ -33,11 +42,43 @@ export function defaultEmployee(index: number): Employee {
     sick: 5,
     training: 5,
     trainingCost: 1000,
+    employmentType: DEFAULT_EMPLOYMENT_TYPE,
+    wageMode: DEFAULT_WAGE_MODE,
+    monthlyGross: DEFAULT_MONTHLY_GROSS,
+    employerCostMode: DEFAULT_EMPLOYER_COST_MODE,
+    employerCostManualMonat: DEFAULT_EMPLOYER_COST_MANUAL_MONAT,
   };
 }
 
 function asNumber(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+/** Wie {@link asNumber}, danach auf ≥ 0 begrenzt. */
+function asNonNegativeNumber(value: unknown, fallback: number): number {
+  const n = asNumber(value, fallback);
+  return Math.max(0, n);
+}
+
+function pickEmploymentType(
+  value: unknown,
+  fallback: EmploymentType,
+): EmploymentType {
+  if (value === "festangestellt" || value === "minijob") return value;
+  return fallback;
+}
+
+function pickWageMode(value: unknown, fallback: WageMode): WageMode {
+  if (value === "hourly" || value === "monthly") return value;
+  return fallback;
+}
+
+function pickEmployerCostMode(
+  value: unknown,
+  fallback: EmployerCostMode,
+): EmployerCostMode {
+  if (value === "factor" || value === "manual") return value;
+  return fallback;
 }
 
 function normalizeSachkosten(raw: unknown): SachkostenConfig {
@@ -129,6 +170,23 @@ export function normalizePraxisConfig(rawConfig: unknown): PraxisConfig {
         sick: asNumber(e.sick, fallback.sick),
         training: asNumber(e.training, fallback.training),
         trainingCost: asNumber(e.trainingCost, fallback.trainingCost),
+        employmentType: pickEmploymentType(
+          e.employmentType,
+          fallback.employmentType ?? DEFAULT_EMPLOYMENT_TYPE,
+        ),
+        wageMode: pickWageMode(e.wageMode, fallback.wageMode ?? DEFAULT_WAGE_MODE),
+        monthlyGross: asNonNegativeNumber(
+          e.monthlyGross,
+          fallback.monthlyGross ?? DEFAULT_MONTHLY_GROSS,
+        ),
+        employerCostMode: pickEmployerCostMode(
+          e.employerCostMode,
+          fallback.employerCostMode ?? DEFAULT_EMPLOYER_COST_MODE,
+        ),
+        employerCostManualMonat: asNonNegativeNumber(
+          e.employerCostManualMonat,
+          fallback.employerCostManualMonat ?? DEFAULT_EMPLOYER_COST_MANUAL_MONAT,
+        ),
       };
     });
   }

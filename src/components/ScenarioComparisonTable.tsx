@@ -42,8 +42,12 @@ export type ScenarioComparisonTableRow = {
 type ScenarioComparisonTableProps = {
   scenarios: ScenarioComparisonTableRow[];
   onGoToCockpit?: () => void;
+  /** Anzahl gespeicherter Szenarien (inkl. ausgeblendete), für Hinweise wenn nur „Aktuell“ sichtbar ist. */
+  savedScenarioTotalCount?: number;
   /** Nur gespeicherte Szenario-Spalten (nicht „Aktuell“) verschieben; „left“ tauscht mit der Spalte links (nie über Aktuell). */
   onReorderScenario?: (scenarioId: string, direction: "left" | "right") => void;
+  /** Spalte aus Diagramm/Tabelle nehmen ohne das Szenario zu löschen. */
+  onExcludeScenario?: (scenarioId: string) => void;
 };
 
 const euro0 = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
@@ -241,44 +245,82 @@ const subFirstCol =
   "sticky left-0 z-[1] border-l-2 border-brand-primary/15 bg-brand-bg/30 py-2 pr-4 pl-8 max-md:pl-4 md:bg-brand-bg/30";
 const subTr = "bg-brand-bg/30 transition-colors duration-200 ease-out";
 
-function ColumnShiftButtons({
+const columnHdrBtnClass =
+  "inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded border border-[var(--color-brand-border-soft)] bg-white text-xs font-semibold text-brand-muted transition hover:border-brand-primary/40 hover:bg-brand-bg/40 hover:text-brand-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[var(--color-brand-border-soft)] disabled:hover:bg-white disabled:hover:text-brand-muted";
+
+function EyeSlashMini({ className }: { className?: string }) {
+  return (
+    <svg
+      width={14}
+      height={14}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  );
+}
+
+function ColumnScenarioToolbar({
   scenarioId,
   savedIndex,
   savedCount,
   onReorder,
+  onExclude,
 }: {
   scenarioId: string;
   savedIndex: number;
   savedCount: number;
-  onReorder: (scenarioId: string, direction: "left" | "right") => void;
+  onReorder?: (scenarioId: string, direction: "left" | "right") => void;
+  onExclude?: (scenarioId: string) => void;
 }) {
   const canLeft = savedIndex > 0;
   const canRight = savedIndex < savedCount - 1;
-  const btnClass =
-    "inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded border border-[var(--color-brand-border-soft)] bg-white text-xs font-semibold text-brand-muted transition hover:border-brand-primary/40 hover:bg-brand-bg/40 hover:text-brand-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[var(--color-brand-border-soft)] disabled:hover:bg-white disabled:hover:text-brand-muted";
 
   return (
-    <div className="mt-1.5 flex justify-end gap-1">
-      <button
-        type="button"
-        className={btnClass}
-        disabled={!canLeft}
-        aria-label="Szenario-Spalte nach links verschieben"
-        title="Nach links"
-        onClick={() => onReorder(scenarioId, "left")}
-      >
-        ‹
-      </button>
-      <button
-        type="button"
-        className={btnClass}
-        disabled={!canRight}
-        aria-label="Szenario-Spalte nach rechts verschieben"
-        title="Nach rechts"
-        onClick={() => onReorder(scenarioId, "right")}
-      >
-        ›
-      </button>
+    <div className="mt-1.5 flex justify-end gap-1 flex-wrap">
+      {onExclude ? (
+        <button
+          type="button"
+          className={columnHdrBtnClass}
+          aria-label="Aus Vergleich ausblenden"
+          title="Aus Vergleich ausblenden"
+          onClick={() => onExclude(scenarioId)}
+        >
+          <EyeSlashMini />
+        </button>
+      ) : null}
+      {onReorder ? (
+        <>
+          <button
+            type="button"
+            className={columnHdrBtnClass}
+            disabled={!canLeft}
+            aria-label="Szenario-Spalte nach links verschieben"
+            title="Nach links"
+            onClick={() => onReorder(scenarioId, "left")}
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            className={columnHdrBtnClass}
+            disabled={!canRight}
+            aria-label="Szenario-Spalte nach rechts verschieben"
+            title="Nach rechts"
+            onClick={() => onReorder(scenarioId, "right")}
+          >
+            ›
+          </button>
+        </>
+      ) : null}
     </div>
   );
 }
@@ -286,7 +328,9 @@ function ColumnShiftButtons({
 export function ScenarioComparisonTable({
   scenarios,
   onGoToCockpit,
+  savedScenarioTotalCount,
   onReorderScenario,
+  onExcludeScenario,
 }: ScenarioComparisonTableProps) {
   const current = scenarios.find((s) => s.isCurrent);
   const onlyCurrent = scenarios.length <= 1;
@@ -318,6 +362,8 @@ export function ScenarioComparisonTable({
   const showGF = scenarios.some((s) => gfGehaltFromKpis(s.kpis) > 0.01);
 
   if (onlyCurrent || !current) {
+    const allSavedHidden = (savedScenarioTotalCount ?? 0) > 0;
+
     return (
       <Card variant="default" contentClassName="p-6">
         <Eyebrow>Detail</Eyebrow>
@@ -325,8 +371,17 @@ export function ScenarioComparisonTable({
           Kennzahlen im Vergleich
         </h3>
         <p className="max-w-xl text-sm leading-relaxed text-brand-text">
-          Speichern Sie ein Szenario, um Vergleiche zu sehen. Nutzen Sie „Aktuellen Stand merken“ und
-          vergleichen Sie dann mit zukünftigen Änderungen.
+          {allSavedHidden ? (
+            <>
+              Alle gespeicherten Szenarien sind aktuell aus dem Vergleich ausgeblendet. Blenden Sie
+              sie über die Leiste darüber wieder ein — sie werden nicht gelöscht.
+            </>
+          ) : (
+            <>
+              Speichern Sie ein Szenario, um Vergleiche zu sehen. Nutzen Sie „Aktuellen Stand merken“ und
+              vergleichen Sie dann mit zukünftigen Änderungen.
+            </>
+          )}
         </p>
         {onGoToCockpit ? (
           <button
@@ -513,12 +568,13 @@ export function ScenarioComparisonTable({
                         </span>
                       ) : null}
                     </span>
-                    {!s.isCurrent && onReorderScenario ? (
-                      <ColumnShiftButtons
+                    {!s.isCurrent && (onReorderScenario || onExcludeScenario) ? (
+                      <ColumnScenarioToolbar
                         scenarioId={s.id}
                         savedIndex={savedIndex}
                         savedCount={savedScenarioCount}
                         onReorder={onReorderScenario}
+                        onExclude={onExcludeScenario}
                       />
                     ) : null}
                   </th>

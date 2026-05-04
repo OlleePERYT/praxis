@@ -1,10 +1,13 @@
 import { resolveBranding } from "./branding";
 import { DEFAULT_ACCENT, DEFAULT_PRIMARY } from "./colors";
 import {
+  agFactor,
   calculatePraxis,
   getEffectiveRevPerHour,
+  getEmployeePersonnelCostYear,
   getSachkostenJahr,
   SACH_OHNE_MIETE,
+  type Employee,
   type PraxisConfig,
   type RevenueConfigMix,
 } from "./engine";
@@ -811,6 +814,156 @@ const refDefaults = {
   console.assert(
     both.primary === DEFAULT_PRIMARY && both.accent === DEFAULT_ACCENT,
     "Test 19c: TEMP — beide Tenant-Farben ignoriert.",
+  );
+}
+
+// Test 20: Beschäftigungsart, Lohnform, AG-Nebenkosten (optional Felder, Backward-Compat).
+{
+  console.assert(
+    agFactor("festangestellt") === 1.21,
+    "Test 20a: agFactor festangestellt.",
+  );
+  console.assert(agFactor("minijob") === 1.32, "Test 20b: agFactor minijob.");
+  console.assert(agFactor(undefined) === 1.21, "Test 20c: agFactor Default.");
+
+  const monthlyFest: Employee = {
+    name: "Monatslohn Fest",
+    hours: 20,
+    rate: 0,
+    vacation: 0,
+    sick: 0,
+    training: 0,
+    trainingCost: 0,
+    wageMode: "monthly",
+    monthlyGross: 3000,
+    employmentType: "festangestellt",
+  };
+  console.assert(
+    approxEqual(getEmployeePersonnelCostYear(monthlyFest), 3000 * 12 * 1.21),
+    "Test 20d: monthly fest — Brutto × AG.",
+  );
+
+  const legacyHourly: Employee = {
+    name: "Legacy hourly",
+    hours: 20,
+    rate: 25,
+    vacation: 0,
+    sick: 0,
+    training: 0,
+    trainingCost: 0,
+  };
+  console.assert(
+    approxEqual(getEmployeePersonnelCostYear(legacyHourly), 25 * 20 * 52 * 1.21),
+    "Test 20e: Regression ohne neue Felder.",
+  );
+
+  const monthlyManualAg: Employee = {
+    name: "Monthly manual AG",
+    hours: 20,
+    rate: 0,
+    vacation: 0,
+    sick: 0,
+    training: 0,
+    trainingCost: 0,
+    wageMode: "monthly",
+    monthlyGross: 3000,
+    employerCostMode: "manual",
+    employerCostManualMonat: 800,
+  };
+  console.assert(
+    approxEqual(getEmployeePersonnelCostYear(monthlyManualAg), 36000 + 9600),
+    "Test 20f: manual AG — Brutto + manueller Aufschlag, agFactor irrelevant.",
+  );
+
+  const miniMonthly: Employee = {
+    name: "Minijob monthly",
+    hours: 10,
+    rate: 0,
+    vacation: 0,
+    sick: 0,
+    training: 0,
+    trainingCost: 0,
+    employmentType: "minijob",
+    wageMode: "monthly",
+    monthlyGross: 500,
+  };
+  console.assert(
+    approxEqual(getEmployeePersonnelCostYear(miniMonthly), 500 * 12 * 1.32),
+    "Test 20g: Minijob monthly mit AG_MINIJOB.",
+  );
+
+  const miniHourlyManual: Employee = {
+    name: "Minijob hourly manual AG",
+    hours: 10,
+    rate: 14,
+    vacation: 0,
+    sick: 0,
+    training: 0,
+    trainingCost: 0,
+    employmentType: "minijob",
+    wageMode: "hourly",
+    employerCostMode: "manual",
+    employerCostManualMonat: 200,
+  };
+  console.assert(
+    approxEqual(
+      getEmployeePersonnelCostYear(miniHourlyManual),
+      14 * 10 * 52 + 200 * 12,
+    ),
+    "Test 20h: hourly Brutto + manueller AG, agFactor irrelevant.",
+  );
+
+  const integrationTwoMa: PraxisConfig = {
+    employees: [
+      {
+        name: "MA1 Fest hourly",
+        hours: 20,
+        rate: 25,
+        vacation: 30,
+        sick: 5,
+        training: 5,
+        trainingCost: 1000,
+        employmentType: "festangestellt",
+        wageMode: "hourly",
+      },
+      {
+        name: "MA2 Minijob monthly",
+        hours: 10,
+        rate: 0,
+        vacation: 0,
+        sick: 0,
+        training: 0,
+        trainingCost: 0,
+        employmentType: "minijob",
+        wageMode: "monthly",
+        monthlyGross: 500,
+      },
+    ],
+    revenue: { mode: "direct", revPerHour: 60 },
+    mieteMonat: 0,
+    untermiete: 0,
+    sachkosten: { mode: "direct", value: 0 },
+    ...refDefaults,
+  };
+  const intResult = calculatePraxis(integrationTwoMa);
+  console.assert(
+    approxEqual(intResult.personalCostMitarbeitende, 31460 + 7920),
+    "Test 20i: calculatePraxis summiert MA-Kosten korrekt.",
+  );
+
+  const monthlyOhneBrutto: Employee = {
+    name: "Monthly ohne monthlyGross",
+    hours: 20,
+    rate: 99,
+    vacation: 0,
+    sick: 0,
+    training: 0,
+    trainingCost: 0,
+    wageMode: "monthly",
+  };
+  console.assert(
+    getEmployeePersonnelCostYear(monthlyOhneBrutto) === 0,
+    "Test 20j: monthly ohne monthlyGross — 0, kein Crash.",
   );
 }
 
