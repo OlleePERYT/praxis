@@ -8,6 +8,8 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         PORT: 3001,
+        // msmtp liest ~/.msmtprc — PM2 setzt HOME sonst oft nicht
+        HOME: "/root",
       },
     },
   ],

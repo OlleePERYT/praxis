@@ -1,5 +1,5 @@
-import nodemailer from "nodemailer";
 import { NextResponse } from "next/server";
+import { sendContactMail } from "@/lib/contact-send";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -13,9 +13,6 @@ const MAX = {
   honeypot: 200,
 } as const;
 
-const FROM = process.env.CONTACT_FROM ?? "hi@peryt.de";
-const TO = process.env.CONTACT_TO ?? "ostoecker@gmx.de";
-const SENDMAIL_PATH = process.env.SENDMAIL_PATH ?? "/usr/sbin/sendmail";
 const SUBJECT = "Neue Kontaktformular-Anfrage von praxis-kennzahlen.de";
 
 function trimField(value: unknown, max: number): string {
@@ -72,12 +69,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const transporter = nodemailer.createTransport({
-    sendmail: true,
-    newline: "unix",
-    path: SENDMAIL_PATH,
-  });
-
   const sentAt = new Date().toLocaleString("de-DE", {
     timeZone: "Europe/Berlin",
     dateStyle: "medium",
@@ -98,16 +89,14 @@ export async function POST(request: Request) {
   textLines.push(`Seite: ${pageUrl || "(nicht angegeben)"}`);
 
   try {
-    await transporter.sendMail({
-      from: FROM,
-      to: TO,
-      replyTo: email,
+    await sendContactMail({
       subject: SUBJECT,
-      text: textLines.join("\n"),
+      body: textLines.join("\n"),
+      replyTo: email,
     });
   } catch (err) {
     console.error(
-      "contact/sendmail:",
+      "contact/mail:",
       err instanceof Error ? err.message : "send failed",
     );
     return NextResponse.json({ error: "send_failed" }, { status: 500 });
