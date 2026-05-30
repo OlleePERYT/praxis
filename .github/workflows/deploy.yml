@@ -27,7 +27,7 @@ jobs:
             npm ci
             NODE_ENV=production npm run build
             if pm2 describe praxis-kennzahlen > /dev/null 2>&1; then
-              pm2 restart praxis-kennzahlen
+              pm2 reload ecosystem.config.js --only praxis-kennzahlen --update-env
             else
               pm2 start ecosystem.config.js --only praxis-kennzahlen
             fi
