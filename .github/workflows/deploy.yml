@@ -20,10 +20,11 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            set -e
             cd /var/www/praxis-kennzahlen
             git pull origin main
-            rm -rf .next
-            rm -rf node_modules
+            pm2 stop praxis-kennzahlen 2>/dev/null || true
+            rm -rf .next node_modules
             npm ci
             NODE_ENV=production npm run build
             if pm2 describe praxis-kennzahlen > /dev/null 2>&1; then
