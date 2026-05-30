@@ -9,6 +9,17 @@ type ContactFormProps = {
   variant?: "landing" | "support";
 };
 
+const MAX = {
+  name: 120,
+  praxisname: 120,
+  email: 254,
+  phone: 30,
+  message: 5000,
+} as const;
+
+const GENERIC_ERROR =
+  "Ihre Nachricht konnte leider nicht gesendet werden. Bitte versuchen Sie es später erneut.";
+
 export default function ContactForm({ variant = "landing" }: ContactFormProps) {
   const isSupport = variant === "support";
   const [status, setStatus] = useState<SubmitStatus>("idle");
@@ -16,7 +27,9 @@ export default function ContactForm({ variant = "landing" }: ContactFormProps) {
   const [name, setName] = useState("");
   const [praxisname, setPraxisname] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
+  const [honeypot, setHoneypot] = useState("");
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -31,7 +44,11 @@ export default function ContactForm({ variant = "landing" }: ContactFormProps) {
           name,
           praxisname,
           email,
+          phone,
           message,
+          website: honeypot,
+          pageUrl:
+            typeof window !== "undefined" ? window.location.href : "",
         }),
       });
 
@@ -45,9 +62,11 @@ export default function ContactForm({ variant = "landing" }: ContactFormProps) {
       if (!res.ok) {
         setStatus("error");
         setErrorMessage(
-          typeof data.error === "string"
-            ? data.error
-            : "E-Mail konnte nicht gesendet werden.",
+          res.status >= 500
+            ? GENERIC_ERROR
+            : typeof data.error === "string"
+              ? data.error
+              : "Bitte prüfen Sie Ihre Eingaben.",
         );
         return;
       }
@@ -55,9 +74,7 @@ export default function ContactForm({ variant = "landing" }: ContactFormProps) {
       setStatus("success");
     } catch {
       setStatus("error");
-      setErrorMessage(
-        "Die Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es später erneut.",
-      );
+      setErrorMessage(GENERIC_ERROR);
     }
   }
 
@@ -68,6 +85,104 @@ export default function ContactForm({ variant = "landing" }: ContactFormProps) {
     "w-full rounded-lg border border-brand-surface px-4 py-3 text-brand-ink outline-none transition-colors focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20";
 
   const ic = isSupport ? inputSupport : inputLanding;
+  const honeypotId = isSupport ? "support-contact-website" : "contact-website";
+
+  const formFields = (
+    <>
+      <div
+        className="absolute -left-[9999px] h-0 w-0 overflow-hidden"
+        aria-hidden="true"
+      >
+        <label htmlFor={honeypotId}>Website</label>
+        <input
+          id={honeypotId}
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(ev) => setHoneypot(ev.target.value)}
+        />
+      </div>
+
+      <Field
+        label="Name"
+        id={isSupport ? "support-contact-name" : "contact-name"}
+        type="text"
+        autoComplete="name"
+        required
+        disabled={status === "loading"}
+        value={name}
+        onChange={setName}
+        inputClass={ic}
+        labelBold={!isSupport}
+        maxLength={MAX.name}
+      />
+      <Field
+        label="Praxisname"
+        id={isSupport ? "support-contact-praxisname" : "contact-praxisname"}
+        type="text"
+        autoComplete="organization"
+        required
+        disabled={status === "loading"}
+        value={praxisname}
+        onChange={setPraxisname}
+        inputClass={ic}
+        labelBold={!isSupport}
+        maxLength={MAX.praxisname}
+      />
+      <Field
+        label="E-Mail"
+        id={isSupport ? "support-contact-email" : "contact-email"}
+        type="email"
+        autoComplete="email"
+        required
+        disabled={status === "loading"}
+        value={email}
+        onChange={setEmail}
+        inputClass={ic}
+        labelBold={!isSupport}
+        maxLength={MAX.email}
+      />
+      <Field
+        label="Telefon"
+        id={isSupport ? "support-contact-phone" : "contact-phone"}
+        type="tel"
+        autoComplete="tel"
+        required={false}
+        optional
+        disabled={status === "loading"}
+        value={phone}
+        onChange={setPhone}
+        inputClass={ic}
+        labelBold={!isSupport}
+        maxLength={MAX.phone}
+      />
+      <div>
+        <label
+          htmlFor={isSupport ? "support-contact-message" : "contact-message"}
+          className={
+            isSupport
+              ? "text-sm font-medium text-brand-text"
+              : "text-sm font-semibold text-brand-text"
+          }
+        >
+          Nachricht <span className="text-red-500">*</span>
+        </label>
+        <textarea
+          id={isSupport ? "support-contact-message" : "contact-message"}
+          name="message"
+          rows={5}
+          required
+          disabled={status === "loading"}
+          value={message}
+          onChange={(ev) => setMessage(ev.target.value)}
+          maxLength={MAX.message}
+          className={`mt-2 resize-y ${ic}`}
+        />
+      </div>
+    </>
+  );
 
   if (isSupport) {
     return (
@@ -82,10 +197,14 @@ export default function ContactForm({ variant = "landing" }: ContactFormProps) {
         <div className="mx-auto mt-8 rounded-xl border border-brand-surface bg-white p-6 md:p-8">
           {status === "success" ? (
             <p className="text-center text-lg font-medium text-green-700">
-              Vielen Dank! Wir melden uns bald.
+              Vielen Dank! Ihre Nachricht wurde gesendet. Wir melden uns bald.
             </p>
           ) : (
-            <form className="space-y-6" onSubmit={handleSubmit} noValidate>
+            <form
+              className="relative space-y-6"
+              onSubmit={handleSubmit}
+              noValidate
+            >
               {status === "error" && errorMessage ? (
                 <p
                   className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
@@ -94,63 +213,13 @@ export default function ContactForm({ variant = "landing" }: ContactFormProps) {
                   {errorMessage}
                 </p>
               ) : null}
-              <Field
-                label="Name"
-                id="support-contact-name"
-                type="text"
-                autoComplete="name"
-                required
-                disabled={status === "loading"}
-                value={name}
-                onChange={setName}
-                inputClass={ic}
-              />
-              <Field
-                label="Praxisname"
-                id="support-contact-praxisname"
-                type="text"
-                autoComplete="organization"
-                required
-                disabled={status === "loading"}
-                value={praxisname}
-                onChange={setPraxisname}
-                inputClass={ic}
-              />
-              <Field
-                label="E-Mail"
-                id="support-contact-email"
-                type="email"
-                autoComplete="email"
-                required
-                disabled={status === "loading"}
-                value={email}
-                onChange={setEmail}
-                inputClass={ic}
-              />
-              <div>
-                <label
-                  htmlFor="support-contact-message"
-                  className="text-sm font-medium text-brand-text"
-                >
-                  Nachricht <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="support-contact-message"
-                  name="message"
-                  rows={5}
-                  required
-                  disabled={status === "loading"}
-                  value={message}
-                  onChange={(ev) => setMessage(ev.target.value)}
-                  className={`mt-2 resize-y ${ic}`}
-                />
-              </div>
+              {formFields}
               <button
                 type="submit"
                 disabled={status === "loading"}
                 className="w-full rounded-lg bg-brand-primary px-8 py-4 font-semibold text-white transition-colors hover:bg-brand-accent disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Nachricht senden →
+                {status === "loading" ? "Wird gesendet …" : "Nachricht senden →"}
               </button>
             </form>
           )}
@@ -176,10 +245,14 @@ export default function ContactForm({ variant = "landing" }: ContactFormProps) {
         <div className="mt-12 rounded-2xl border border-brand-surface bg-white p-8 shadow-sm">
           {status === "success" ? (
             <p className="text-center text-lg font-medium text-green-700">
-              Vielen Dank! Wir melden uns bald.
+              Vielen Dank! Ihre Nachricht wurde gesendet. Wir melden uns bald.
             </p>
           ) : (
-            <form className="space-y-6" onSubmit={handleSubmit} noValidate>
+            <form
+              className="relative space-y-6"
+              onSubmit={handleSubmit}
+              noValidate
+            >
               {status === "error" && errorMessage ? (
                 <p
                   className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
@@ -188,68 +261,13 @@ export default function ContactForm({ variant = "landing" }: ContactFormProps) {
                   {errorMessage}
                 </p>
               ) : null}
-
-              <Field
-                label="Name"
-                id="contact-name"
-                type="text"
-                autoComplete="name"
-                required
-                disabled={status === "loading"}
-                value={name}
-                onChange={setName}
-                inputClass={inputLanding}
-                labelBold
-              />
-              <Field
-                label="Praxisname"
-                id="contact-praxisname"
-                type="text"
-                autoComplete="organization"
-                required
-                disabled={status === "loading"}
-                value={praxisname}
-                onChange={setPraxisname}
-                inputClass={inputLanding}
-                labelBold
-              />
-              <Field
-                label="E-Mail"
-                id="contact-email"
-                type="email"
-                autoComplete="email"
-                required
-                disabled={status === "loading"}
-                value={email}
-                onChange={setEmail}
-                inputClass={inputLanding}
-                labelBold
-              />
-              <div>
-                <label
-                  htmlFor="contact-message"
-                  className="text-sm font-semibold text-brand-text"
-                >
-                  Nachricht <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="contact-message"
-                  name="message"
-                  rows={5}
-                  required
-                  disabled={status === "loading"}
-                  value={message}
-                  onChange={(ev) => setMessage(ev.target.value)}
-                  className={`mt-2 resize-y ${inputLanding}`}
-                />
-              </div>
-
+              {formFields}
               <button
                 type="submit"
                 disabled={status === "loading"}
                 className="w-full rounded-xl bg-gradient-to-br from-brand-primary to-[#3a8763] px-8 py-4 font-semibold text-white shadow-[var(--shadow-glow-sm)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-md)] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Jetzt anfragen →
+                {status === "loading" ? "Wird gesendet …" : "Jetzt anfragen →"}
               </button>
             </form>
           )}
@@ -265,22 +283,26 @@ function Field({
   type,
   autoComplete,
   required,
+  optional,
   disabled,
   value,
   onChange,
   inputClass,
   labelBold,
+  maxLength,
 }: {
   label: string;
   id: string;
   type: string;
   autoComplete: string;
   required: boolean;
+  optional?: boolean;
   disabled: boolean;
   value: string;
   onChange: (v: string) => void;
   inputClass: string;
   labelBold?: boolean;
+  maxLength?: number;
 }) {
   return (
     <div>
@@ -292,7 +314,12 @@ function Field({
             : "text-sm font-medium text-brand-text"
         }
       >
-        {label} <span className="text-red-500">*</span>
+        {label}{" "}
+        {optional ? (
+          <span className="font-normal text-brand-muted">(optional)</span>
+        ) : (
+          <span className="text-red-500">*</span>
+        )}
       </label>
       <input
         id={id}
@@ -303,6 +330,7 @@ function Field({
         disabled={disabled}
         value={value}
         onChange={(ev) => onChange(ev.target.value)}
+        maxLength={maxLength}
         className={`mt-2 ${inputClass}`}
       />
     </div>
